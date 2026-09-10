@@ -4,7 +4,7 @@
   "sha256": "dfcb89a589a453d38dbb7f8426fbf72cc9ff3e952d989c049085c3f6389bd2f9",
   "size_bytes": 435055,
   "ingested_at": "2026-09-10T11:52:17.624786-05:00",
-  "status": "prepared",
+  "status": "analyzed",
   "validation": {
     "rows": 6554,
     "students": 1737,
@@ -38,5 +38,17 @@
       "duplicate_groups_detected": 318,
       "duplicate_rows_removed": 323
     }
+  },
+  "analysis": {
+    "method": "Welch independent two-sample t-test",
+    "alpha": 0.05,
+    "courses_analyzed": 13,
+    "courses_significant": 4,
+    "csv_output": "analysis_ING-20260910-101728.csv",
+    "json_output": "analysis_ING-20260910-101728.json",
+    "plot_output": "analysis_ING-20260910-101728.png",
+    "csv_sha256": "d321c5fd77ae585be041fe085a52896fed7d7ebc3a2c52e0788d1d9e2ee1b6f5",
+    "json_sha256": "d450b9b9ad6ada6760045085b4ff1f1dcd9b4398a62d8c536c85f5d86be0c4a8",
+    "plot_sha256": "11f8895240cfa4931fbbddeabb574c4b69a14da27e82752c89441fd0c5012a83"
   }
 }

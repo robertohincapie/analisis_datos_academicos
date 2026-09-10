@@ -1,0 +1,14 @@
+﻿Curso,n_con_nota,n_asisten,n_no_asisten,media_asisten,media_no_asisten,diferencia_medias,t_statistic,p_value,alpha,significativo,resultado
+Geometría Analítica,437,108,329,3.4867592592592596,3.040060790273556,0.44669846898570365,5.100954332457198,5.93948795021133e-07,0.05,True,Se rechaza H0. Existe evidencia estadística de una diferencia entre las medias de los grupos.
+Cálculo Diferencial,433,130,303,3.3536923076923078,2.942937293729373,0.4107550139629348,4.44147421978062,1.1872728181546109e-05,0.05,True,Se rechaza H0. Existe evidencia estadística de una diferencia entre las medias de los grupos.
+Cálculo Integral,389,184,205,3.3794021739130433,3.1018048780487804,0.27759729586426296,3.681712276739068,0.00026559428738823226,0.05,True,Se rechaza H0. Existe evidencia estadística de una diferencia entre las medias de los grupos.
+Fundamentos de Química,232,28,204,3.5596428571428573,2.9809313725490196,0.5787114845938377,3.8764716030968422,0.0003285309918770721,0.05,True,Se rechaza H0. Existe evidencia estadística de una diferencia entre las medias de los grupos.
+Álgebra Lineal,346,123,223,3.594471544715447,3.424753363228699,0.1697181814867479,1.812835193259209,0.07086421127461977,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Física Mecánica,308,66,242,3.2340909090909093,3.1684710743801654,0.06561983471074395,0.8348551756713534,0.4052789251654192,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Ecuaciones Diferenciales,156,79,77,3.574050632911393,3.6870129870129875,-0.11296235410159472,-0.7767832060880743,0.4386655159129648,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Fundamentos Matemáticos,286,20,266,3.682,3.766278195488722,-0.08427819548872195,-0.6990571894754024,0.48946194782868896,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Electricidad y Magnetismo,242,70,172,3.3970000000000002,3.347906976744186,0.04909302325581422,0.590785215486351,0.5555848161412863,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Cálculo Vectorial,180,62,118,3.0404838709677424,3.0360169491525424,0.004466921815200031,0.0442894100619893,0.9647271211153926,0.05,False,No se rechaza H0. No existe evidencia estadística suficiente para afirmar que las medias sean diferentes.
+Fortalecimiento Académico: Física,0,0,0,,,,,,0.05,,Muestras insuficientes para realizar la prueba.
+Fortalecimiento Académico: Matemáticas,0,0,0,,,,,,0.05,,Muestras insuficientes para realizar la prueba.
+Física Moderna,32,0,32,,3.2725,,,,0.05,,Muestras insuficientes para realizar la prueba.
