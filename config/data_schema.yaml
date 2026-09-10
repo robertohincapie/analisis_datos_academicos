@@ -1,0 +1,25 @@
+version: 1
+
+columns:
+  student_id:
+    type: string
+    nullable: false
+  Curso:
+    type: string
+    nullable: false
+  Semestre:
+    type: string
+    nullable: false
+    pattern: '^\d{4}-[12]$'
+  Nota Curso:
+    type: number
+    nullable: true
+    min: 0.0
+    max: 5.0
+  n_asistencias:
+    type: integer
+    nullable: false
+    min: 0
+  asistio:
+    type: boolean
+    nullable: false

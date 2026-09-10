@@ -1,0 +1,22 @@
+[project]
+name = "academic-performance-analysis"
+version = "0.1.0"
+description = "Laboratorio de producción para análisis de desempeño académico"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas",
+    "pyyaml",
+    "scipy",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 88
