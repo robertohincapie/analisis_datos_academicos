@@ -1,0 +1,42 @@
+{
+  "dataset_id": "ING-20260910-101728",
+  "filename": "academic_performance_ING-20260910-101728.csv",
+  "sha256": "dfcb89a589a453d38dbb7f8426fbf72cc9ff3e952d989c049085c3f6389bd2f9",
+  "size_bytes": 435055,
+  "ingested_at": "2026-09-10T11:52:17.624786-05:00",
+  "status": "prepared",
+  "validation": {
+    "rows": 6554,
+    "students": 1737,
+    "courses": 13,
+    "semesters": 3,
+    "missing_grades": 3446,
+    "duplicates": {
+      "duplicate_rows": 641,
+      "duplicate_groups": 318,
+      "report": "ING-20260910-101728_duplicates.csv"
+    }
+  },
+  "validated_file": "academic_performance_ING-20260910-101728.csv",
+  "preparation": {
+    "input": "academic_performance_ING-20260910-101728.csv",
+    "output": "academic_performance_prepared_ING-20260910-101728.csv",
+    "sha256": "1a0498dcd4a53021a4fde7c4d86e9055e4d74e3fed455097c8f8f2421bece819",
+    "rows_received": 6554,
+    "rows_prepared": 6231,
+    "students": 1737,
+    "courses": 13,
+    "semesters": 3,
+    "rows_with_grade": 3041,
+    "rows_without_grade": 3190,
+    "students_with_attendance": 710,
+    "students_without_attendance": 1669,
+    "duplicates": {
+      "rows_before": 6554,
+      "rows_after": 6231,
+      "duplicate_rows_detected": 641,
+      "duplicate_groups_detected": 318,
+      "duplicate_rows_removed": 323
+    }
+  }
+}
