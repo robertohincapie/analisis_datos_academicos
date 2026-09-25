@@ -496,10 +496,24 @@ def train_regression_model(
         / f"regression_{model_type}_{dataset_id}.joblib"
     )
 
+    # Categorías completas observadas en el dataset (no solo
+    # las que quedaron como columna dummy, que excluyen la
+    # categoría de referencia). Sirven para que, más adelante,
+    # un servicio pueda validar la entrada antes de predecir
+    # (Unidad 4, Capítulo 4: "Validar la entrada").
+
+    categories = {
+        "Curso": sorted(df["Curso"].dropna().unique().tolist()),
+        "Semestre": sorted(
+            df["Semestre"].dropna().unique().tolist()
+        ),
+    }
+
     joblib.dump(
         {
             "model": model,
             "feature_columns": list(x.columns),
+            "categories": categories,
         },
         model_output,
     )

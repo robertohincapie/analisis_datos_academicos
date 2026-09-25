@@ -1,0 +1,13 @@
+{
+  "task": "regression",
+  "target": "Nota Curso",
+  "model_type": "linear",
+  "model_name": "nota_curso_regresion",
+  "model_version": 3,
+  "model_alias": "candidato",
+  "metrics": {
+    "rmse": 0.8321884656826379,
+    "r2": 0.08351088462559308
+  },
+  "registered_at": "2026-09-25T17:10:43.087102-05:00"
+}

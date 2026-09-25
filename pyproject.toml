@@ -3,16 +3,19 @@ name = "academic-performance-analysis"
 version = "0.1.0"
 description = "Laboratorio de producción para análisis de desempeño académico"
 requires-python = ">=3.12"
+# Dependencias de EJECUCIÓN del servicio desplegado
+# (academic_analysis.api). Deliberadamente mínimas: es lo
+# único que instala la imagen de Docker (ver Dockerfile).
 dependencies = [
-    "matplotlib>=3.11.1",
-    "mlflow>=3.16.1",
+    "fastapi>=0.141.1",
     "pandas",
-    "pyyaml",
     "scikit-learn>=1.9.1",
-    "scipy",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [dependency-groups]
+# Herramientas de desarrollo: editor, pruebas, linting,
+# notebooks. Nunca se instalan en el servicio desplegado.
 dev = [
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
@@ -20,6 +23,26 @@ dev = [
     "pytest",
     "ruff",
 ]
+
+# Todo lo que necesita el PIPELINE de datos/modelos (ingesta,
+# validación, preparación, análisis, entrenamiento, MLflow),
+# pero que el servicio ya desplegado no vuelve a usar: el
+# modelo ya quedó entrenado y empaquetado en deploy/. Ver
+# Unidad 4, Cap. 2: "Desarrollo y producción no necesitan
+# siempre las mismas librerías".
+pipeline = [
+    "matplotlib>=3.11.1",
+    "mlflow>=3.16.1",
+    "pyyaml",
+    "scipy",
+]
+
+[tool.uv]
+# `uv sync` local sigue instalando todo (dev + pipeline), para
+# que trabajar en el repo sea tan simple como siempre. La
+# imagen de Docker es la que pide explícitamente
+# --no-default-groups para quedarse solo con `dependencies`.
+default-groups = ["dev", "pipeline"]
 
 [build-system]
 requires = ["hatchling"]

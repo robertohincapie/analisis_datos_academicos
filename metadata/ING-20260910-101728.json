@@ -88,10 +88,10 @@
           "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
           "experiment_name": "nota_curso_regresion",
           "experiment_id": "1",
-          "run_id": "a40fd05d1c6d4e7297c88befa36912ef"
+          "run_id": "e41731b1b2df4c9c806112fdd18cae25"
         },
         "model_output": "regression_linear_ING-20260910-101728.joblib",
-        "model_sha256": "0ad76b68e6d5bb02fc2bf2b86b6038ee2b782f929a24a06f1f5174b33f454af2"
+        "model_sha256": "cd84924d859ff3391b1a4fcf23845c7481e840652ff257a532a32475405378d1"
       },
       "random_forest": {
         "model_type": "random_forest",
@@ -128,10 +128,10 @@
           "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
           "experiment_name": "nota_curso_regresion",
           "experiment_id": "1",
-          "run_id": "524091f52e024cbba5b90797a73b44c5"
+          "run_id": "d49bec24baa44065982cac2cc057e821"
         },
         "model_output": "regression_random_forest_ING-20260910-101728.joblib",
-        "model_sha256": "406882ecd32e2f80b533e6b55691bfddb2ba3a8e79fcee623563c05c5b6e3f93"
+        "model_sha256": "7d7594b636b8335d65e5490eca310e51461097b1c7d1721cfadd5578d07e2172"
       }
     },
     "classification": {
@@ -249,22 +249,22 @@
       "candidates": [
         {
           "model_type": "linear",
-          "run_id": "a40fd05d1c6d4e7297c88befa36912ef",
+          "run_id": "e41731b1b2df4c9c806112fdd18cae25",
           "rmse": 0.8321884656826379,
           "r2": 0.08351088462559308,
           "passes_gate": true
         },
         {
           "model_type": "random_forest",
-          "run_id": "524091f52e024cbba5b90797a73b44c5",
+          "run_id": "d49bec24baa44065982cac2cc057e821",
           "rmse": 0.8342205512299212,
           "r2": 0.07902954848385213,
           "passes_gate": true
         }
       ],
       "selected_model_type": "linear",
-      "selected_run_id": "a40fd05d1c6d4e7297c88befa36912ef",
-      "evaluated_at": "2026-09-25T17:03:51.612549-05:00"
+      "selected_run_id": "e41731b1b2df4c9c806112fdd18cae25",
+      "evaluated_at": "2026-09-25T17:10:34.292354-05:00"
     },
     "classification": {
       "criteria": "Mayor F1 entre los candidatos que superan el baseline (predecir siempre la clase mayoritaria de entrenamiento).",
@@ -296,12 +296,12 @@
   "registry": {
     "regression": {
       "registered_model_name": "nota_curso_regresion",
-      "version": 2,
+      "version": 3,
       "alias": "candidato",
-      "run_id": "a40fd05d1c6d4e7297c88befa36912ef",
+      "run_id": "e41731b1b2df4c9c806112fdd18cae25",
       "model_type": "linear",
       "status": "candidato",
-      "registered_at": "2026-09-25T17:03:52.954994-05:00"
+      "registered_at": "2026-09-25T17:10:43.087102-05:00"
     },
     "classification": {
       "registered_model_name": "aprobacion_clasificacion",

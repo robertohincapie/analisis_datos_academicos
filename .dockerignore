@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.ruff_cache/
+.pytest_cache/
+.env
+data/
+metadata/
+models/
+notebooks/
+results/
+mlruns/
+mlflow.db
+tests/
+config/
