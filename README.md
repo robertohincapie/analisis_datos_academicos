@@ -30,26 +30,28 @@ El análisis del Laboratorio 1 (prueba t) responde si existe una diferencia
 estadística entre asistir y no asistir. Los modelos de este laboratorio van
 un paso más allá y usan asistencia, curso y semestre para predecir:
 
-- **Regresión** (`LinearRegression`): la nota exacta del curso.
-- **Clasificación** (`LogisticRegression`): si el estudiante aprueba
-  (`Nota Curso >= 3.0`).
+- **Regresión**: la nota exacta del curso.
+- **Clasificación**: si el estudiante aprueba (`Nota Curso >= 3.0`).
 
-Ambos son una primera aproximación (*baseline*), con desempeño modesto —ver
+Para cada tarea hay dos algoritmos candidatos (ver `--model-type` abajo).
+Todos son una primera aproximación, con desempeño modesto —ver
 `notebooks/Unidad4_lab2.ipynb` para la interpretación completa, incluyendo
-por qué un *accuracy* del 78% en el modelo de clasificación en realidad no
-es tan bueno como parece.
+por qué un *accuracy* del 78% en clasificación en realidad no es tan bueno
+como parece.
 
 Cada ejecución queda registrada en MLflow (parámetros, métricas y el modelo
 como artefacto) y también resumida en `metadata/<dataset_id>.json`, bajo
-`training.regression` y `training.classification`, junto al `run_id`
-correspondiente de cada una.
+`training.regression.<model_type>` y `training.classification.<model_type>`,
+junto al `run_id` correspondiente de cada una.
 
 ```bash
-# Entrenamiento (regresión)
-uv run python -m academic_analysis.train regression --dataset ING-20260910-101728
+# Entrenamiento (regresión: linear o random_forest)
+uv run python -m academic_analysis.train regression --model-type linear --dataset ING-20260910-101728
+uv run python -m academic_analysis.train regression --model-type random_forest --dataset ING-20260910-101728
 
-# Entrenamiento (clasificación: ¿aprueba el curso?)
-uv run python -m academic_analysis.train classification --dataset ING-20260910-101728
+# Entrenamiento (clasificación: logistic o random_forest)
+uv run python -m academic_analysis.train classification --model-type logistic --dataset ING-20260910-101728
+uv run python -m academic_analysis.train classification --model-type random_forest --dataset ING-20260910-101728
 
 # Explorar los experimentos registrados
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
@@ -59,4 +61,23 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 ejecutando `train.py` y no se versionan en Git. Lo que sí se versiona es
 cada modelo entrenado (`models/`), la matriz de confusión (`results/`) y el
 resumen de cada experimento en el manifiesto.
+
+## Laboratorio 3
+
+Comparar los candidatos entrenados y seleccionar uno, con un criterio
+explícito: superar un **baseline ingenuo** (predecir siempre el promedio, o
+predecir siempre la clase mayoritaria). Ver
+`notebooks/Unidad4_lab3_seleccion.ipynb` para la lectura completa.
+
+```bash
+uv run python -m academic_analysis.compare regression --dataset ING-20260910-101728
+uv run python -m academic_analysis.compare classification --dataset ING-20260910-101728
+```
+
+El resultado (criterio, baseline, cada candidato y cuál —si alguno— fue
+seleccionado) queda en `metadata/<dataset_id>.json`, bajo
+`selection.regression` / `selection.classification`. En este dataset, la
+regresión sí encuentra un candidato válido; en clasificación, **ningún
+candidato supera el baseline todavía**, así que no se selecciona ninguno —
+es el comportamiento esperado, no un error.
 

@@ -53,95 +53,244 @@
   },
   "training": {
     "regression": {
-      "model_type": "LinearRegression",
-      "target": "Nota Curso",
-      "raw_features": [
-        "n_asistencias",
-        "Curso",
-        "Semestre"
-      ],
-      "encoded_features": [
-        "n_asistencias",
-        "Curso_Cálculo Integral",
-        "Curso_Cálculo Vectorial",
-        "Curso_Ecuaciones Diferenciales",
-        "Curso_Electricidad y Magnetismo",
-        "Curso_Fundamentos Matemáticos",
-        "Curso_Fundamentos de Química",
-        "Curso_Física Mecánica",
-        "Curso_Física Moderna",
-        "Curso_Geometría Analítica",
-        "Curso_Álgebra Lineal",
-        "Semestre_2026-1",
-        "Semestre_2026-2"
-      ],
-      "test_size": 0.2,
-      "random_state": 42,
-      "n_train": 2432,
-      "n_test": 609,
-      "metrics": {
-        "rmse": 0.8321884656826379,
-        "r2": 0.08351088462559308
+      "linear": {
+        "model_type": "linear",
+        "target": "Nota Curso",
+        "raw_features": [
+          "n_asistencias",
+          "Curso",
+          "Semestre"
+        ],
+        "encoded_features": [
+          "n_asistencias",
+          "Curso_Cálculo Integral",
+          "Curso_Cálculo Vectorial",
+          "Curso_Ecuaciones Diferenciales",
+          "Curso_Electricidad y Magnetismo",
+          "Curso_Fundamentos Matemáticos",
+          "Curso_Fundamentos de Química",
+          "Curso_Física Mecánica",
+          "Curso_Física Moderna",
+          "Curso_Geometría Analítica",
+          "Curso_Álgebra Lineal",
+          "Semestre_2026-1",
+          "Semestre_2026-2"
+        ],
+        "test_size": 0.2,
+        "random_state": 42,
+        "n_train": 2432,
+        "n_test": 609,
+        "metrics": {
+          "rmse": 0.8321884656826379,
+          "r2": 0.08351088462559308
+        },
+        "mlflow": {
+          "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+          "experiment_name": "nota_curso_regresion",
+          "experiment_id": "1",
+          "run_id": "a40fd05d1c6d4e7297c88befa36912ef"
+        },
+        "model_output": "regression_linear_ING-20260910-101728.joblib",
+        "model_sha256": "0ad76b68e6d5bb02fc2bf2b86b6038ee2b782f929a24a06f1f5174b33f454af2"
       },
-      "mlflow": {
-        "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
-        "experiment_name": "nota_curso_regresion",
-        "experiment_id": "1",
-        "run_id": "027c8d140a1641a2a6ca6b43702c9874"
-      },
-      "model_output": "regression_ING-20260910-101728.joblib",
-      "model_sha256": "0ad76b68e6d5bb02fc2bf2b86b6038ee2b782f929a24a06f1f5174b33f454af2"
+      "random_forest": {
+        "model_type": "random_forest",
+        "target": "Nota Curso",
+        "raw_features": [
+          "n_asistencias",
+          "Curso",
+          "Semestre"
+        ],
+        "encoded_features": [
+          "n_asistencias",
+          "Curso_Cálculo Integral",
+          "Curso_Cálculo Vectorial",
+          "Curso_Ecuaciones Diferenciales",
+          "Curso_Electricidad y Magnetismo",
+          "Curso_Fundamentos Matemáticos",
+          "Curso_Fundamentos de Química",
+          "Curso_Física Mecánica",
+          "Curso_Física Moderna",
+          "Curso_Geometría Analítica",
+          "Curso_Álgebra Lineal",
+          "Semestre_2026-1",
+          "Semestre_2026-2"
+        ],
+        "test_size": 0.2,
+        "random_state": 42,
+        "n_train": 2432,
+        "n_test": 609,
+        "metrics": {
+          "rmse": 0.8342205512299212,
+          "r2": 0.07902954848385213
+        },
+        "mlflow": {
+          "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+          "experiment_name": "nota_curso_regresion",
+          "experiment_id": "1",
+          "run_id": "524091f52e024cbba5b90797a73b44c5"
+        },
+        "model_output": "regression_random_forest_ING-20260910-101728.joblib",
+        "model_sha256": "406882ecd32e2f80b533e6b55691bfddb2ba3a8e79fcee623563c05c5b6e3f93"
+      }
     },
     "classification": {
-      "model_type": "LogisticRegression",
-      "target": "Nota Curso >= 3.0",
-      "raw_features": [
-        "n_asistencias",
-        "Curso",
-        "Semestre"
-      ],
-      "encoded_features": [
-        "n_asistencias",
-        "Curso_Cálculo Integral",
-        "Curso_Cálculo Vectorial",
-        "Curso_Ecuaciones Diferenciales",
-        "Curso_Electricidad y Magnetismo",
-        "Curso_Fundamentos Matemáticos",
-        "Curso_Fundamentos de Química",
-        "Curso_Física Mecánica",
-        "Curso_Física Moderna",
-        "Curso_Geometría Analítica",
-        "Curso_Álgebra Lineal",
-        "Semestre_2026-1",
-        "Semestre_2026-2"
-      ],
-      "test_size": 0.2,
-      "random_state": 42,
-      "n_train": 2432,
-      "n_test": 609,
-      "metrics": {
-        "accuracy": 0.7848932676518884,
-        "f1": 0.8794848206071757,
-        "confusion_matrix": [
-          [
-            0,
-            131
-          ],
-          [
-            0,
-            478
+      "logistic": {
+        "model_type": "logistic",
+        "target": "Nota Curso >= 3.0",
+        "raw_features": [
+          "n_asistencias",
+          "Curso",
+          "Semestre"
+        ],
+        "encoded_features": [
+          "n_asistencias",
+          "Curso_Cálculo Integral",
+          "Curso_Cálculo Vectorial",
+          "Curso_Ecuaciones Diferenciales",
+          "Curso_Electricidad y Magnetismo",
+          "Curso_Fundamentos Matemáticos",
+          "Curso_Fundamentos de Química",
+          "Curso_Física Mecánica",
+          "Curso_Física Moderna",
+          "Curso_Geometría Analítica",
+          "Curso_Álgebra Lineal",
+          "Semestre_2026-1",
+          "Semestre_2026-2"
+        ],
+        "test_size": 0.2,
+        "random_state": 42,
+        "n_train": 2432,
+        "n_test": 609,
+        "metrics": {
+          "accuracy": 0.7848932676518884,
+          "f1": 0.8794848206071757,
+          "confusion_matrix": [
+            [
+              0,
+              131
+            ],
+            [
+              0,
+              478
+            ]
           ]
-        ]
+        },
+        "mlflow": {
+          "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+          "experiment_name": "aprobacion_clasificacion",
+          "experiment_id": "2",
+          "run_id": "69b3a90cebf54052b2ca4504a5dcb884"
+        },
+        "model_output": "classification_logistic_ING-20260910-101728.joblib",
+        "model_sha256": "811b43d788ea177a0e9f34f067f4b796991b683e06199bd0dddefad4a4615f12",
+        "confusion_matrix_plot": "classification_logistic_ING-20260910-101728_confusion_matrix.png"
       },
-      "mlflow": {
-        "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
-        "experiment_name": "aprobacion_clasificacion",
-        "experiment_id": "2",
-        "run_id": "c7c55a6af4564137a69e350ba7abfb6d"
+      "random_forest": {
+        "model_type": "random_forest",
+        "target": "Nota Curso >= 3.0",
+        "raw_features": [
+          "n_asistencias",
+          "Curso",
+          "Semestre"
+        ],
+        "encoded_features": [
+          "n_asistencias",
+          "Curso_Cálculo Integral",
+          "Curso_Cálculo Vectorial",
+          "Curso_Ecuaciones Diferenciales",
+          "Curso_Electricidad y Magnetismo",
+          "Curso_Fundamentos Matemáticos",
+          "Curso_Fundamentos de Química",
+          "Curso_Física Mecánica",
+          "Curso_Física Moderna",
+          "Curso_Geometría Analítica",
+          "Curso_Álgebra Lineal",
+          "Semestre_2026-1",
+          "Semestre_2026-2"
+        ],
+        "test_size": 0.2,
+        "random_state": 42,
+        "n_train": 2432,
+        "n_test": 609,
+        "metrics": {
+          "accuracy": 0.7832512315270936,
+          "f1": 0.8784530386740331,
+          "confusion_matrix": [
+            [
+              0,
+              131
+            ],
+            [
+              1,
+              477
+            ]
+          ]
+        },
+        "mlflow": {
+          "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+          "experiment_name": "aprobacion_clasificacion",
+          "experiment_id": "2",
+          "run_id": "1ddbff78a5a343d7914271bc93fceac8"
+        },
+        "model_output": "classification_random_forest_ING-20260910-101728.joblib",
+        "model_sha256": "485f5d888d3f0bc0cc117be5a7873e95b69e68319ff4a70b2d5653a88f978417",
+        "confusion_matrix_plot": "classification_random_forest_ING-20260910-101728_confusion_matrix.png"
+      }
+    }
+  },
+  "selection": {
+    "regression": {
+      "criteria": "Menor RMSE entre los candidatos que superan el baseline (predecir siempre el promedio de entrenamiento).",
+      "baseline": {
+        "description": "Predecir siempre la nota promedio.",
+        "rmse": 0.8693518928235887
       },
-      "model_output": "classification_ING-20260910-101728.joblib",
-      "model_sha256": "811b43d788ea177a0e9f34f067f4b796991b683e06199bd0dddefad4a4615f12",
-      "confusion_matrix_plot": "classification_ING-20260910-101728_confusion_matrix.png"
+      "candidates": [
+        {
+          "model_type": "linear",
+          "run_id": "a40fd05d1c6d4e7297c88befa36912ef",
+          "rmse": 0.8321884656826379,
+          "r2": 0.08351088462559308,
+          "passes_gate": true
+        },
+        {
+          "model_type": "random_forest",
+          "run_id": "524091f52e024cbba5b90797a73b44c5",
+          "rmse": 0.8342205512299212,
+          "r2": 0.07902954848385213,
+          "passes_gate": true
+        }
+      ],
+      "selected_model_type": "linear",
+      "selected_run_id": "a40fd05d1c6d4e7297c88befa36912ef",
+      "evaluated_at": "2026-09-25T16:52:38.499399-05:00"
+    },
+    "classification": {
+      "criteria": "Mayor F1 entre los candidatos que superan el baseline (predecir siempre la clase mayoritaria de entrenamiento).",
+      "baseline": {
+        "description": "Predecir siempre la clase mayoritaria (aprueba).",
+        "accuracy": 0.7848932676518884
+      },
+      "candidates": [
+        {
+          "model_type": "logistic",
+          "run_id": "69b3a90cebf54052b2ca4504a5dcb884",
+          "accuracy": 0.7848932676518884,
+          "f1": 0.8794848206071757,
+          "passes_gate": false
+        },
+        {
+          "model_type": "random_forest",
+          "run_id": "1ddbff78a5a343d7914271bc93fceac8",
+          "accuracy": 0.7832512315270936,
+          "f1": 0.8784530386740331,
+          "passes_gate": false
+        }
+      ],
+      "selected_model_type": null,
+      "selected_run_id": null,
+      "evaluated_at": "2026-09-25T16:52:38.535323-05:00"
     }
   }
 }

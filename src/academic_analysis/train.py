@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -42,6 +43,20 @@ TARGET_COLUMN = "Nota Curso"
 REGRESSION_EXPERIMENT_NAME = "nota_curso_regresion"
 CLASSIFICATION_EXPERIMENT_NAME = "aprobacion_clasificacion"
 PASSING_GRADE = 3.0
+
+# Cada tarea admite más de un algoritmo candidato. El primero de
+# cada lista es el que se usó como primera aproximación (etapa 2);
+# el segundo se agrega para tener con qué comparar (etapa 3).
+
+REGRESSION_MODEL_TYPES = (
+    "linear",
+    "random_forest",
+)
+
+CLASSIFICATION_MODEL_TYPES = (
+    "logistic",
+    "random_forest",
+)
 
 
 # ============================================================
@@ -105,7 +120,7 @@ def save_manifest(
         )
 
 
-KNOWN_TRAINING_KEYS = (
+KNOWN_TASKS = (
     "regression",
     "classification",
 )
@@ -113,26 +128,46 @@ KNOWN_TRAINING_KEYS = (
 
 def set_training_entry(
     manifest: dict,
-    model_key: str,
+    task: str,
+    model_type: str,
     training: dict,
 ) -> None:
     """
     Guarda el resumen de un entrenamiento bajo
-    manifest["training"][model_key], preservando el
-    resumen de otros modelos ya entrenados sobre el
-    mismo dataset (p. ej. regression y classification
-    conviven en el mismo manifiesto).
+    manifest["training"][task][model_type], preservando
+    los demás candidatos y tareas ya entrenados sobre el
+    mismo dataset. Cada dataset puede terminar con varios
+    candidatos por tarea (p. ej. regression.linear y
+    regression.random_forest), tal como conviven varios
+    runs dentro de un mismo experimento de MLflow.
     """
 
-    existing = manifest.get("training", {})
-
     training_section = {
-        key: value
-        for key, value in existing.items()
-        if key in KNOWN_TRAINING_KEYS
+        task_name: candidates
+        for task_name, candidates in manifest.get(
+            "training", {}
+        ).items()
+        if task_name in KNOWN_TASKS
     }
 
-    training_section[model_key] = training
+    task_candidates = training_section.get(task)
+
+    # Manifiestos de una versión anterior de esta función
+    # guardaban un único resumen plano por tarea (con claves
+    # como "metrics" o "model_type" directamente). Si
+    # encontramos ese formato antiguo, lo reemplazamos por
+    # el nuevo formato anidado por algoritmo en vez de
+    # mezclarlos.
+
+    if (
+        not isinstance(task_candidates, dict)
+        or "metrics" in task_candidates
+        or "model_type" in task_candidates
+    ):
+        task_candidates = {}
+
+    task_candidates[model_type] = training
+    training_section[task] = task_candidates
 
     manifest["training"] = training_section
     manifest["status"] = "trained"
@@ -264,24 +299,89 @@ def build_classification_frame(
     return x, y
 
 
+def build_regression_estimator(
+    model_type: str,
+    random_state: int,
+):
+    """Construye el estimador de regresión según model_type."""
+
+    if model_type == "linear":
+        return LinearRegression()
+
+    if model_type == "random_forest":
+        return RandomForestRegressor(
+            n_estimators=200,
+            random_state=random_state,
+        )
+
+    raise ValueError(
+        f"model_type de regresión no soportado: {model_type}. "
+        f"Use uno de: {REGRESSION_MODEL_TYPES}"
+    )
+
+
+def skops_trusted_types(
+    model_type: str,
+) -> list[str] | None:
+    """
+    MLflow guarda los modelos con 'skops' por seguridad: por
+    defecto rechaza cargar tipos que podrían usarse para
+    ejecutar código arbitrario. Los modelos basados en árboles
+    (RandomForest) usan un tipo interno de scikit-learn que
+    hay que declarar explícitamente como confiable — algo
+    razonable aquí porque acabamos de entrenar el modelo
+    nosotros mismos, en este mismo proceso.
+    """
+
+    if model_type == "random_forest":
+        return ["sklearn.tree._tree.Tree"]
+
+    return None
+
+
+def build_classification_estimator(
+    model_type: str,
+    random_state: int,
+):
+    """Construye el estimador de clasificación según model_type."""
+
+    if model_type == "logistic":
+        return LogisticRegression(
+            max_iter=1000,
+        )
+
+    if model_type == "random_forest":
+        return RandomForestClassifier(
+            n_estimators=200,
+            random_state=random_state,
+        )
+
+    raise ValueError(
+        f"model_type de clasificación no soportado: {model_type}. "
+        f"Use uno de: {CLASSIFICATION_MODEL_TYPES}"
+    )
+
+
 # ============================================================
 # Entrenamiento: regresión
 # ============================================================
 
 def train_regression_model(
     dataset_id: str,
+    model_type: str = "linear",
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> tuple[Path, dict]:
     """
-    Entrena un modelo de regresión lineal que predice
+    Entrena un modelo de regresión que predice
     'Nota Curso' a partir de la asistencia, el curso y
-    el semestre.
+    el semestre. model_type selecciona el algoritmo
+    (ver REGRESSION_MODEL_TYPES).
 
     El experimento se registra en MLflow (parámetros,
     métricas y el modelo como artefacto). El manifiesto
-    del dataset se actualiza con un resumen del
-    entrenamiento, bajo training.regression.
+    del dataset se actualiza bajo
+    training.regression.<model_type>.
     """
 
     manifest_path, manifest, df = load_prepared_dataset(
@@ -303,7 +403,10 @@ def train_regression_model(
         random_state=random_state,
     )
 
-    model = LinearRegression()
+    model = build_regression_estimator(
+        model_type,
+        random_state,
+    )
 
     model.fit(x_train, y_train)
 
@@ -337,7 +440,7 @@ def train_regression_model(
     )
 
     with mlflow.start_run(
-        run_name=f"regression_{dataset_id}"
+        run_name=f"regression_{model_type}_{dataset_id}"
     ) as run:
 
         mlflow.set_tag(
@@ -345,9 +448,14 @@ def train_regression_model(
             dataset_id,
         )
 
+        mlflow.set_tag(
+            "model_type",
+            model_type,
+        )
+
         mlflow.log_params(
             {
-                "model_type": "LinearRegression",
+                "model_type": model_type,
                 "features": ",".join(FEATURE_COLUMNS),
                 "n_features_encoded": x.shape[1],
                 "test_size": test_size,
@@ -368,6 +476,7 @@ def train_regression_model(
             model,
             name="model",
             input_example=x_train.head(3),
+            skops_trusted_types=skops_trusted_types(model_type),
         )
 
         run_id = run.info.run_id
@@ -384,7 +493,7 @@ def train_regression_model(
 
     model_output = (
         MODELS_DIR
-        / f"regression_{dataset_id}.joblib"
+        / f"regression_{model_type}_{dataset_id}.joblib"
     )
 
     joblib.dump(
@@ -400,7 +509,7 @@ def train_regression_model(
     # --------------------------------------------------
 
     training = {
-        "model_type": "LinearRegression",
+        "model_type": model_type,
         "target": TARGET_COLUMN,
         "raw_features": FEATURE_COLUMNS,
         "encoded_features": list(x.columns),
@@ -422,7 +531,12 @@ def train_regression_model(
         "model_sha256": sha256_file(model_output),
     }
 
-    set_training_entry(manifest, "regression", training)
+    set_training_entry(
+        manifest,
+        "regression",
+        model_type,
+        training,
+    )
 
     save_manifest(
         manifest_path,
@@ -438,22 +552,24 @@ def train_regression_model(
 
 def train_classification_model(
     dataset_id: str,
+    model_type: str = "logistic",
     test_size: float = 0.2,
     random_state: int = 42,
     passing_grade: float = PASSING_GRADE,
 ) -> tuple[Path, dict]:
     """
-    Entrena un modelo de clasificación (regresión
-    logística) que predice si el estudiante aprueba el
-    curso (Nota Curso >= passing_grade) a partir de la
-    asistencia, el curso y el semestre.
+    Entrena un modelo de clasificación que predice si el
+    estudiante aprueba el curso (Nota Curso >=
+    passing_grade) a partir de la asistencia, el curso y
+    el semestre. model_type selecciona el algoritmo (ver
+    CLASSIFICATION_MODEL_TYPES).
 
     Usa exactamente las mismas variables de entrada que
-    el modelo de regresión, para que ambos experimentos
+    el modelo de regresión, para que los experimentos
     sean comparables. El experimento se registra en
     MLflow, incluyendo la matriz de confusión como
     artefacto. El manifiesto se actualiza bajo
-    training.classification.
+    training.classification.<model_type>.
     """
 
     manifest_path, manifest, df = load_prepared_dataset(
@@ -479,8 +595,9 @@ def train_classification_model(
         stratify=y,
     )
 
-    model = LogisticRegression(
-        max_iter=1000,
+    model = build_classification_estimator(
+        model_type,
+        random_state,
     )
 
     model.fit(x_train, y_train)
@@ -518,7 +635,10 @@ def train_classification_model(
 
     confusion_matrix_output = (
         RESULTS_DIR
-        / f"classification_{dataset_id}_confusion_matrix.png"
+        / (
+            f"classification_{model_type}_{dataset_id}"
+            "_confusion_matrix.png"
+        )
     )
 
     display = ConfusionMatrixDisplay(
@@ -531,7 +651,7 @@ def train_classification_model(
     display.plot(ax=ax, colorbar=False)
 
     ax.set_title(
-        "Matriz de confusión — "
+        f"Matriz de confusión ({model_type}) — "
         "¿aprueba el curso?"
     )
 
@@ -558,7 +678,7 @@ def train_classification_model(
     )
 
     with mlflow.start_run(
-        run_name=f"classification_{dataset_id}"
+        run_name=f"classification_{model_type}_{dataset_id}"
     ) as run:
 
         mlflow.set_tag(
@@ -566,9 +686,14 @@ def train_classification_model(
             dataset_id,
         )
 
+        mlflow.set_tag(
+            "model_type",
+            model_type,
+        )
+
         mlflow.log_params(
             {
-                "model_type": "LogisticRegression",
+                "model_type": model_type,
                 "features": ",".join(FEATURE_COLUMNS),
                 "n_features_encoded": x.shape[1],
                 "passing_grade": passing_grade,
@@ -594,6 +719,7 @@ def train_classification_model(
             model,
             name="model",
             input_example=x_train.head(3),
+            skops_trusted_types=skops_trusted_types(model_type),
         )
 
         run_id = run.info.run_id
@@ -610,7 +736,7 @@ def train_classification_model(
 
     model_output = (
         MODELS_DIR
-        / f"classification_{dataset_id}.joblib"
+        / f"classification_{model_type}_{dataset_id}.joblib"
     )
 
     joblib.dump(
@@ -627,7 +753,7 @@ def train_classification_model(
     # --------------------------------------------------
 
     training = {
-        "model_type": "LogisticRegression",
+        "model_type": model_type,
         "target": (
             f"{TARGET_COLUMN} >= {passing_grade}"
         ),
@@ -653,7 +779,12 @@ def train_classification_model(
         "confusion_matrix_plot": confusion_matrix_output.name,
     }
 
-    set_training_entry(manifest, "classification", training)
+    set_training_entry(
+        manifest,
+        "classification",
+        model_type,
+        training,
+    )
 
     save_manifest(
         manifest_path,
@@ -705,7 +836,7 @@ def main() -> None:
     )
 
     subparsers = parser.add_subparsers(
-        dest="model",
+        dest="task",
         required=True,
     )
 
@@ -716,12 +847,26 @@ def main() -> None:
 
     _add_common_arguments(regression_parser)
 
+    regression_parser.add_argument(
+        "--model-type",
+        choices=REGRESSION_MODEL_TYPES,
+        default="linear",
+        help="Algoritmo a usar (default: linear).",
+    )
+
     classification_parser = subparsers.add_parser(
         "classification",
         help="Predice si el estudiante aprueba el curso.",
     )
 
     _add_common_arguments(classification_parser)
+
+    classification_parser.add_argument(
+        "--model-type",
+        choices=CLASSIFICATION_MODEL_TYPES,
+        default="logistic",
+        help="Algoritmo a usar (default: logistic).",
+    )
 
     classification_parser.add_argument(
         "--passing-grade",
@@ -737,15 +882,16 @@ def main() -> None:
 
     try:
 
-        if args.model == "regression":
+        if args.task == "regression":
 
             print(
-                "\nEntrenando modelo de regresión "
+                f"\nEntrenando modelo de regresión ({args.model_type}) "
                 f"para el dataset: {args.dataset}\n"
             )
 
             model_output, training = train_regression_model(
                 dataset_id=args.dataset,
+                model_type=args.model_type,
                 test_size=args.test_size,
                 random_state=args.random_state,
             )
@@ -754,11 +900,13 @@ def main() -> None:
 
             print(
                 "\nEntrenando modelo de clasificación "
+                f"({args.model_type}) "
                 f"para el dataset: {args.dataset}\n"
             )
 
             model_output, training = train_classification_model(
                 dataset_id=args.dataset,
+                model_type=args.model_type,
                 test_size=args.test_size,
                 random_state=args.random_state,
                 passing_grade=args.passing_grade,
