@@ -52,43 +52,96 @@
     "plot_sha256": "11f8895240cfa4931fbbddeabb574c4b69a14da27e82752c89441fd0c5012a83"
   },
   "training": {
-    "model_type": "LinearRegression",
-    "target": "Nota Curso",
-    "raw_features": [
-      "n_asistencias",
-      "Curso",
-      "Semestre"
-    ],
-    "encoded_features": [
-      "n_asistencias",
-      "Curso_Cálculo Integral",
-      "Curso_Cálculo Vectorial",
-      "Curso_Ecuaciones Diferenciales",
-      "Curso_Electricidad y Magnetismo",
-      "Curso_Fundamentos Matemáticos",
-      "Curso_Fundamentos de Química",
-      "Curso_Física Mecánica",
-      "Curso_Física Moderna",
-      "Curso_Geometría Analítica",
-      "Curso_Álgebra Lineal",
-      "Semestre_2026-1",
-      "Semestre_2026-2"
-    ],
-    "test_size": 0.2,
-    "random_state": 42,
-    "n_train": 2432,
-    "n_test": 609,
-    "metrics": {
-      "rmse": 0.8321884656826379,
-      "r2": 0.08351088462559308
+    "regression": {
+      "model_type": "LinearRegression",
+      "target": "Nota Curso",
+      "raw_features": [
+        "n_asistencias",
+        "Curso",
+        "Semestre"
+      ],
+      "encoded_features": [
+        "n_asistencias",
+        "Curso_Cálculo Integral",
+        "Curso_Cálculo Vectorial",
+        "Curso_Ecuaciones Diferenciales",
+        "Curso_Electricidad y Magnetismo",
+        "Curso_Fundamentos Matemáticos",
+        "Curso_Fundamentos de Química",
+        "Curso_Física Mecánica",
+        "Curso_Física Moderna",
+        "Curso_Geometría Analítica",
+        "Curso_Álgebra Lineal",
+        "Semestre_2026-1",
+        "Semestre_2026-2"
+      ],
+      "test_size": 0.2,
+      "random_state": 42,
+      "n_train": 2432,
+      "n_test": 609,
+      "metrics": {
+        "rmse": 0.8321884656826379,
+        "r2": 0.08351088462559308
+      },
+      "mlflow": {
+        "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+        "experiment_name": "nota_curso_regresion",
+        "experiment_id": "1",
+        "run_id": "027c8d140a1641a2a6ca6b43702c9874"
+      },
+      "model_output": "regression_ING-20260910-101728.joblib",
+      "model_sha256": "0ad76b68e6d5bb02fc2bf2b86b6038ee2b782f929a24a06f1f5174b33f454af2"
     },
-    "mlflow": {
-      "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
-      "experiment_name": "nota_curso_regresion",
-      "experiment_id": "1",
-      "run_id": "9a8b605755694baca95794be07a02037"
-    },
-    "model_output": "regression_ING-20260910-101728.joblib",
-    "model_sha256": "0ad76b68e6d5bb02fc2bf2b86b6038ee2b782f929a24a06f1f5174b33f454af2"
+    "classification": {
+      "model_type": "LogisticRegression",
+      "target": "Nota Curso >= 3.0",
+      "raw_features": [
+        "n_asistencias",
+        "Curso",
+        "Semestre"
+      ],
+      "encoded_features": [
+        "n_asistencias",
+        "Curso_Cálculo Integral",
+        "Curso_Cálculo Vectorial",
+        "Curso_Ecuaciones Diferenciales",
+        "Curso_Electricidad y Magnetismo",
+        "Curso_Fundamentos Matemáticos",
+        "Curso_Fundamentos de Química",
+        "Curso_Física Mecánica",
+        "Curso_Física Moderna",
+        "Curso_Geometría Analítica",
+        "Curso_Álgebra Lineal",
+        "Semestre_2026-1",
+        "Semestre_2026-2"
+      ],
+      "test_size": 0.2,
+      "random_state": 42,
+      "n_train": 2432,
+      "n_test": 609,
+      "metrics": {
+        "accuracy": 0.7848932676518884,
+        "f1": 0.8794848206071757,
+        "confusion_matrix": [
+          [
+            0,
+            131
+          ],
+          [
+            0,
+            478
+          ]
+        ]
+      },
+      "mlflow": {
+        "tracking_uri": "sqlite:///C:\\Users\\000010478\\Downloads\\analisis_datos_academicos\\mlflow.db",
+        "experiment_name": "aprobacion_clasificacion",
+        "experiment_id": "2",
+        "run_id": "c7c55a6af4564137a69e350ba7abfb6d"
+      },
+      "model_output": "classification_ING-20260910-101728.joblib",
+      "model_sha256": "811b43d788ea177a0e9f34f067f4b796991b683e06199bd0dddefad4a4615f12",
+      "confusion_matrix_plot": "classification_ING-20260910-101728_confusion_matrix.png"
+    }
   }
 }

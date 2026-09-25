@@ -6,11 +6,19 @@ import json
 from pathlib import Path
 
 import joblib
+import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    mean_squared_error,
+    r2_score,
+)
 from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,10 +26,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PREPARED_DIR = ROOT / "data" / "prepared"
 MODELS_DIR = ROOT / "models"
 METADATA_DIR = ROOT / "metadata"
+RESULTS_DIR = ROOT / "results"
 
 MLFLOW_DB_FILE = ROOT / "mlflow.db"
 MLFLOW_TRACKING_URI = f"sqlite:///{MLFLOW_DB_FILE}"
-MLFLOW_EXPERIMENT_NAME = "nota_curso_regresion"
 
 FEATURE_COLUMNS = [
     "n_asistencias",
@@ -30,6 +38,10 @@ FEATURE_COLUMNS = [
 ]
 
 TARGET_COLUMN = "Nota Curso"
+
+REGRESSION_EXPERIMENT_NAME = "nota_curso_regresion"
+CLASSIFICATION_EXPERIMENT_NAME = "aprobacion_clasificacion"
+PASSING_GRADE = 3.0
 
 
 # ============================================================
@@ -93,64 +105,55 @@ def save_manifest(
         )
 
 
-# ============================================================
-# Datos de entrenamiento
-# ============================================================
+KNOWN_TRAINING_KEYS = (
+    "regression",
+    "classification",
+)
 
-def build_training_frame(
-    df: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.Series]:
+
+def set_training_entry(
+    manifest: dict,
+    model_key: str,
+    training: dict,
+) -> None:
     """
-    Construye X (features) e y (target) para el modelo
-    de regresión que predice la nota del curso.
-
-    Solo se conservan los registros que tienen una nota
-    válida. Las variables categóricas (Curso, Semestre)
-    se codifican mediante one-hot encoding.
+    Guarda el resumen de un entrenamiento bajo
+    manifest["training"][model_key], preservando el
+    resumen de otros modelos ya entrenados sobre el
+    mismo dataset (p. ej. regression y classification
+    conviven en el mismo manifiesto).
     """
 
-    data = df[
-        df[TARGET_COLUMN].notna()
-    ].copy()
+    existing = manifest.get("training", {})
 
-    y = data[TARGET_COLUMN].astype(float)
+    training_section = {
+        key: value
+        for key, value in existing.items()
+        if key in KNOWN_TRAINING_KEYS
+    }
 
-    x = pd.get_dummies(
-        data[FEATURE_COLUMNS],
-        columns=["Curso", "Semestre"],
-        drop_first=True,
-    )
+    training_section[model_key] = training
 
-    return x, y
+    manifest["training"] = training_section
+    manifest["status"] = "trained"
 
 
-# ============================================================
-# Entrenamiento
-# ============================================================
-
-def train_regression_model(
+def load_prepared_dataset(
     dataset_id: str,
-    test_size: float = 0.2,
-    random_state: int = 42,
-) -> tuple[Path, dict]:
+) -> tuple[Path, dict, pd.DataFrame]:
     """
-    Entrena un modelo de regresión lineal que predice
-    'Nota Curso' a partir de la asistencia y el curso.
+    Carga el dataset preparado de un dataset_id,
+    comprobando que el manifiesto indique que ya pasó
+    por la etapa de preparación y que el archivo no haya
+    sido modificado por fuera del pipeline (SHA-256).
 
-    El experimento se registra en MLflow (parámetros,
-    métricas y el modelo como artefacto). El manifiesto
-    del dataset se actualiza con un resumen del
-    entrenamiento, siguiendo el mismo patrón utilizado
-    por las etapas anteriores del pipeline.
+    Esta comprobación es común a cualquier modelo que
+    entrenemos a partir de los datos preparados.
     """
 
     manifest_path, manifest = load_manifest(
         dataset_id
     )
-
-    # --------------------------------------------------
-    # Estado requerido: el dataset debe estar preparado
-    # --------------------------------------------------
 
     preparation = manifest.get("preparation")
 
@@ -172,10 +175,6 @@ def train_regression_model(
             f"No existe el dataset preparado: {input_file}"
         )
 
-    # --------------------------------------------------
-    # Comprobar integridad del dataset de entrada
-    # --------------------------------------------------
-
     current_hash = sha256_file(input_file)
     expected_hash = preparation["sha256"]
 
@@ -187,19 +186,115 @@ def train_regression_model(
 
     df = pd.read_csv(input_file)
 
+    return manifest_path, manifest, df
+
+
+def encode_features(
+    data: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Codifica las variables categóricas (Curso, Semestre)
+    mediante one-hot encoding. Se usa igual para el
+    modelo de regresión y el de clasificación, de modo
+    que ambos parten exactamente de las mismas variables.
+    """
+
+    return pd.get_dummies(
+        data[FEATURE_COLUMNS],
+        columns=["Curso", "Semestre"],
+        drop_first=True,
+    )
+
+
+# ============================================================
+# Datos de entrenamiento
+# ============================================================
+
+def build_training_frame(
+    df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Construye X (features) e y (target) para el modelo
+    de regresión que predice la nota del curso.
+
+    Solo se conservan los registros que tienen una nota
+    válida.
+    """
+
+    data = df[
+        df[TARGET_COLUMN].notna()
+    ].copy()
+
+    y = data[TARGET_COLUMN].astype(float)
+
+    x = encode_features(data)
+
+    return x, y
+
+
+def build_classification_frame(
+    df: pd.DataFrame,
+    passing_grade: float = PASSING_GRADE,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Construye X (features) e y (target) para el modelo
+    de clasificación que predice si el estudiante
+    aprueba el curso.
+
+    aprueba = 1  si  Nota Curso >= passing_grade
+    aprueba = 0  en caso contrario
+
+    Igual que en la regresión, solo se conservan los
+    registros que tienen una nota válida: no tendría
+    sentido "predecir" la aprobación de un registro cuyo
+    resultado real ni siquiera conocemos.
+    """
+
+    data = df[
+        df[TARGET_COLUMN].notna()
+    ].copy()
+
+    y = (
+        data[TARGET_COLUMN].astype(float)
+        >= passing_grade
+    ).astype(int)
+
+    x = encode_features(data)
+
+    return x, y
+
+
+# ============================================================
+# Entrenamiento: regresión
+# ============================================================
+
+def train_regression_model(
+    dataset_id: str,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple[Path, dict]:
+    """
+    Entrena un modelo de regresión lineal que predice
+    'Nota Curso' a partir de la asistencia, el curso y
+    el semestre.
+
+    El experimento se registra en MLflow (parámetros,
+    métricas y el modelo como artefacto). El manifiesto
+    del dataset se actualiza con un resumen del
+    entrenamiento, bajo training.regression.
+    """
+
+    manifest_path, manifest, df = load_prepared_dataset(
+        dataset_id
+    )
+
     x, y = build_training_frame(df)
 
-    n_total = len(x)
-
-    if n_total < 10:
+    if len(x) < 10:
         raise ValueError(
             "No hay suficientes registros con nota "
             "para entrenar un modelo."
         )
-
-    # --------------------------------------------------
-    # Separar entrenamiento y prueba
-    # --------------------------------------------------
 
     x_train, x_test, y_train, y_test = train_test_split(
         x,
@@ -207,10 +302,6 @@ def train_regression_model(
         test_size=test_size,
         random_state=random_state,
     )
-
-    # --------------------------------------------------
-    # Entrenar
-    # --------------------------------------------------
 
     model = LinearRegression()
 
@@ -242,7 +333,7 @@ def train_regression_model(
     )
 
     mlflow.set_experiment(
-        MLFLOW_EXPERIMENT_NAME
+        REGRESSION_EXPERIMENT_NAME
     )
 
     with mlflow.start_run(
@@ -323,7 +414,7 @@ def train_regression_model(
         },
         "mlflow": {
             "tracking_uri": MLFLOW_TRACKING_URI,
-            "experiment_name": MLFLOW_EXPERIMENT_NAME,
+            "experiment_name": REGRESSION_EXPERIMENT_NAME,
             "experiment_id": experiment_id,
             "run_id": run_id,
         },
@@ -331,8 +422,238 @@ def train_regression_model(
         "model_sha256": sha256_file(model_output),
     }
 
-    manifest["training"] = training
-    manifest["status"] = "trained"
+    set_training_entry(manifest, "regression", training)
+
+    save_manifest(
+        manifest_path,
+        manifest,
+    )
+
+    return model_output, training
+
+
+# ============================================================
+# Entrenamiento: clasificación
+# ============================================================
+
+def train_classification_model(
+    dataset_id: str,
+    test_size: float = 0.2,
+    random_state: int = 42,
+    passing_grade: float = PASSING_GRADE,
+) -> tuple[Path, dict]:
+    """
+    Entrena un modelo de clasificación (regresión
+    logística) que predice si el estudiante aprueba el
+    curso (Nota Curso >= passing_grade) a partir de la
+    asistencia, el curso y el semestre.
+
+    Usa exactamente las mismas variables de entrada que
+    el modelo de regresión, para que ambos experimentos
+    sean comparables. El experimento se registra en
+    MLflow, incluyendo la matriz de confusión como
+    artefacto. El manifiesto se actualiza bajo
+    training.classification.
+    """
+
+    manifest_path, manifest, df = load_prepared_dataset(
+        dataset_id
+    )
+
+    x, y = build_classification_frame(
+        df,
+        passing_grade=passing_grade,
+    )
+
+    if len(x) < 10:
+        raise ValueError(
+            "No hay suficientes registros con nota "
+            "para entrenar un modelo."
+        )
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    model = LogisticRegression(
+        max_iter=1000,
+    )
+
+    model.fit(x_train, y_train)
+
+    predictions = model.predict(x_test)
+
+    accuracy = float(
+        accuracy_score(
+            y_test,
+            predictions,
+        )
+    )
+
+    f1 = float(
+        f1_score(
+            y_test,
+            predictions,
+        )
+    )
+
+    matrix = confusion_matrix(
+        y_test,
+        predictions,
+    )
+
+    # --------------------------------------------------
+    # Matriz de confusión como artefacto (igual al
+    # ejemplo de "confusion_matrix.png" de la Unidad 4)
+    # --------------------------------------------------
+
+    RESULTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    confusion_matrix_output = (
+        RESULTS_DIR
+        / f"classification_{dataset_id}_confusion_matrix.png"
+    )
+
+    display = ConfusionMatrixDisplay(
+        confusion_matrix=matrix,
+        display_labels=["reprueba", "aprueba"],
+    )
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    display.plot(ax=ax, colorbar=False)
+
+    ax.set_title(
+        "Matriz de confusión — "
+        "¿aprueba el curso?"
+    )
+
+    fig.tight_layout()
+
+    fig.savefig(
+        confusion_matrix_output,
+        dpi=150,
+        bbox_inches="tight",
+    )
+
+    plt.close(fig)
+
+    # --------------------------------------------------
+    # Registrar el experimento en MLflow
+    # --------------------------------------------------
+
+    mlflow.set_tracking_uri(
+        MLFLOW_TRACKING_URI
+    )
+
+    mlflow.set_experiment(
+        CLASSIFICATION_EXPERIMENT_NAME
+    )
+
+    with mlflow.start_run(
+        run_name=f"classification_{dataset_id}"
+    ) as run:
+
+        mlflow.set_tag(
+            "dataset_id",
+            dataset_id,
+        )
+
+        mlflow.log_params(
+            {
+                "model_type": "LogisticRegression",
+                "features": ",".join(FEATURE_COLUMNS),
+                "n_features_encoded": x.shape[1],
+                "passing_grade": passing_grade,
+                "test_size": test_size,
+                "random_state": random_state,
+                "n_train": len(x_train),
+                "n_test": len(x_test),
+            }
+        )
+
+        mlflow.log_metrics(
+            {
+                "accuracy": accuracy,
+                "f1": f1,
+            }
+        )
+
+        mlflow.log_artifact(
+            str(confusion_matrix_output)
+        )
+
+        mlflow.sklearn.log_model(
+            model,
+            name="model",
+            input_example=x_train.head(3),
+        )
+
+        run_id = run.info.run_id
+        experiment_id = run.info.experiment_id
+
+    # --------------------------------------------------
+    # Guardar una copia del modelo versionada por dataset
+    # --------------------------------------------------
+
+    MODELS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    model_output = (
+        MODELS_DIR
+        / f"classification_{dataset_id}.joblib"
+    )
+
+    joblib.dump(
+        {
+            "model": model,
+            "feature_columns": list(x.columns),
+            "passing_grade": passing_grade,
+        },
+        model_output,
+    )
+
+    # --------------------------------------------------
+    # Actualizar manifiesto
+    # --------------------------------------------------
+
+    training = {
+        "model_type": "LogisticRegression",
+        "target": (
+            f"{TARGET_COLUMN} >= {passing_grade}"
+        ),
+        "raw_features": FEATURE_COLUMNS,
+        "encoded_features": list(x.columns),
+        "test_size": test_size,
+        "random_state": random_state,
+        "n_train": len(x_train),
+        "n_test": len(x_test),
+        "metrics": {
+            "accuracy": accuracy,
+            "f1": f1,
+            "confusion_matrix": matrix.tolist(),
+        },
+        "mlflow": {
+            "tracking_uri": MLFLOW_TRACKING_URI,
+            "experiment_name": CLASSIFICATION_EXPERIMENT_NAME,
+            "experiment_id": experiment_id,
+            "run_id": run_id,
+        },
+        "model_output": model_output.name,
+        "model_sha256": sha256_file(model_output),
+        "confusion_matrix_plot": confusion_matrix_output.name,
+    }
+
+    set_training_entry(manifest, "classification", training)
 
     save_manifest(
         manifest_path,
@@ -346,16 +667,11 @@ def train_regression_model(
 # CLI
 # ============================================================
 
-def main() -> None:
+def _add_common_arguments(
+    subparser: argparse.ArgumentParser,
+) -> None:
 
-    parser = argparse.ArgumentParser(
-        description=(
-            "Entrena un modelo de regresión que predice "
-            "la nota del curso a partir de la asistencia."
-        )
-    )
-
-    parser.add_argument(
+    subparser.add_argument(
         "--dataset",
         required=True,
         help=(
@@ -364,34 +680,89 @@ def main() -> None:
         ),
     )
 
-    parser.add_argument(
+    subparser.add_argument(
         "--test-size",
         type=float,
         default=0.2,
         help="Proporción de datos para prueba (default: 0.2).",
     )
 
-    parser.add_argument(
+    subparser.add_argument(
         "--random-state",
         type=int,
         default=42,
         help="Semilla aleatoria (default: 42).",
     )
 
+
+def main() -> None:
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Entrena un modelo (regresión o clasificación) "
+            "a partir de los datos preparados."
+        )
+    )
+
+    subparsers = parser.add_subparsers(
+        dest="model",
+        required=True,
+    )
+
+    regression_parser = subparsers.add_parser(
+        "regression",
+        help="Predice la nota del curso.",
+    )
+
+    _add_common_arguments(regression_parser)
+
+    classification_parser = subparsers.add_parser(
+        "classification",
+        help="Predice si el estudiante aprueba el curso.",
+    )
+
+    _add_common_arguments(classification_parser)
+
+    classification_parser.add_argument(
+        "--passing-grade",
+        type=float,
+        default=PASSING_GRADE,
+        help=(
+            "Nota mínima para considerar aprobado "
+            f"(default: {PASSING_GRADE})."
+        ),
+    )
+
     args = parser.parse_args()
 
     try:
 
-        print(
-            "\nEntrenando modelo de regresión "
-            f"para el dataset: {args.dataset}\n"
-        )
+        if args.model == "regression":
 
-        model_output, training = train_regression_model(
-            dataset_id=args.dataset,
-            test_size=args.test_size,
-            random_state=args.random_state,
-        )
+            print(
+                "\nEntrenando modelo de regresión "
+                f"para el dataset: {args.dataset}\n"
+            )
+
+            model_output, training = train_regression_model(
+                dataset_id=args.dataset,
+                test_size=args.test_size,
+                random_state=args.random_state,
+            )
+
+        else:
+
+            print(
+                "\nEntrenando modelo de clasificación "
+                f"para el dataset: {args.dataset}\n"
+            )
+
+            model_output, training = train_classification_model(
+                dataset_id=args.dataset,
+                test_size=args.test_size,
+                random_state=args.random_state,
+                passing_grade=args.passing_grade,
+            )
 
     except Exception as exc:
 
@@ -411,13 +782,10 @@ def main() -> None:
         f"Modelo guardado en : {model_output}"
     )
 
-    print(
-        f"RMSE                : {training['metrics']['rmse']:.4f}"
-    )
+    for metric_name, metric_value in training["metrics"].items():
 
-    print(
-        f"R2                  : {training['metrics']['r2']:.4f}"
-    )
+        if isinstance(metric_value, (int, float)):
+            print(f"{metric_name:<20}: {metric_value:.4f}")
 
     print(
         "MLflow run_id       : "
