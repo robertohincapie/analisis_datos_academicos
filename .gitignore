@@ -9,3 +9,9 @@ data/incoming/*
 data/validated/*
 !data/incoming/.gitkeep
 !data/validated/.gitkeep
+
+# Estado local de seguimiento de experimentos (MLflow).
+# Se reconstruye ejecutando train.py; lo que sí se versiona
+# es el resumen en metadata/*.json y el modelo en models/.
+mlruns/
+mlflow.db
