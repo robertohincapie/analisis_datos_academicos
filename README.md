@@ -33,6 +33,7 @@ git checkout main
 | `lab3-paso1-comparacion-seleccion` | Un segundo algoritmo candidato por tarea + selección con un baseline ingenuo explícito. |
 | `lab3-paso2-model-registry` | Los modelos seleccionados (y el rechazado) quedan en el MLflow Model Registry. |
 | `lab4-servicio-inferencia` | El modelo candidato se empaqueta, se sirve con FastAPI y se conteneriza con Docker. |
+| `pruebas-automatizadas` | Pruebas reales con pytest sobre el pipeline y el API (antes eran placeholders). Corrige un bug real que estas pruebas encontraron en `api.py`. |
 
 Cada tag es un punto donde **todo corre**: `uv sync`, `pytest`, y los
 comandos de esa sección del README funcionan tal como están documentados
@@ -238,3 +239,29 @@ Imprime una URL pública temporal (`https://algo-al-azar.trycloudflare.com`)
 que reenvía tráfico al contenedor mientras el comando siga corriendo. No
 requiere cuenta ni configuración — apto para una demostración en clase,
 no para dejarlo corriendo de forma permanente.
+
+---
+
+## Pruebas automatizadas
+
+*(tag `pruebas-automatizadas`)*
+
+```bash
+uv run pytest -v
+```
+
+Cubren la lógica pura del pipeline (sin necesitar datos reales en disco ni
+MLflow corriendo): parseo del `dataset_id`, validaciones de esquema
+(`validate.py`), normalización y deduplicación de registros (`prepare.py`),
+construcción de features/target para ambos modelos (`train.py`), y la
+codificación de entrada del servicio (`api.py`).
+
+Ese último grupo de pruebas encontró un **bug real** mientras se escribía:
+`_build_model_input` usaba `pd.get_dummies` sobre una sola fila, y con un
+único valor presente en la fila, `drop_first` lo descarta *siempre* —
+así que casi cualquier curso quedaba codificado como si fuera la categoría
+de referencia de entrenamiento, sin importar cuál fuera. Una prueba manual
+con `curl` no lo había detectado porque, por casualidad, probó justo con
+el curso que sí era la referencia real. Corregido: las columnas se
+construyen explícitamente a partir de `feature_columns`, sin depender de
+cuántas categorías distintas trae la solicitud.

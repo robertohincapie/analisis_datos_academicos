@@ -127,31 +127,37 @@ def _build_model_input(
     request: PredictionRequest,
 ) -> pd.DataFrame:
 
-    raw = pd.DataFrame(
-        [
-            {
-                "n_asistencias": request.n_asistencias,
-                "Curso": request.curso,
-                "Semestre": request.semestre,
-            }
-        ]
-    )
-
-    encoded = pd.get_dummies(
-        raw,
-        columns=["Curso", "Semestre"],
-        drop_first=True,
-    )
-
-    # Alinear exactamente con las columnas vistas en
-    # entrenamiento: agrega en cero las categorías ausentes
-    # en esta solicitud (incluida la categoría de referencia,
-    # que nunca aparece como columna dummy) y descarta
-    # cualquier columna que no existiera en entrenamiento.
+    # No usamos pd.get_dummies aquí a propósito: sobre una
+    # sola fila, get_dummies solo "ve" la categoría de esa
+    # fila, y drop_first la descarta siempre -sea o no la
+    # categoría de referencia real de entrenamiento-. Con un
+    # único curso/semestre en la solicitud, eso codificaría
+    # casi cualquier valor como si fuera la referencia
+    # (todo en cero), sin importar cuál sea. Por eso
+    # construimos las columnas manualmente a partir de
+    # feature_columns, que sí refleja el esquema real
+    # aprendido en entrenamiento.
 
     feature_columns = _state["feature_columns"]
 
-    return encoded.reindex(columns=feature_columns, fill_value=0)
+    values: dict[str, float] = {
+        "n_asistencias": request.n_asistencias
+    }
+
+    for column in feature_columns:
+
+        if column == "n_asistencias":
+            continue
+
+        if column.startswith("Curso_"):
+            category = column.removeprefix("Curso_")
+            values[column] = int(request.curso == category)
+
+        elif column.startswith("Semestre_"):
+            category = column.removeprefix("Semestre_")
+            values[column] = int(request.semestre == category)
+
+    return pd.DataFrame([values])[feature_columns]
 
 
 # ============================================================
