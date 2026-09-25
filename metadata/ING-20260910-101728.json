@@ -264,7 +264,7 @@
       ],
       "selected_model_type": "linear",
       "selected_run_id": "a40fd05d1c6d4e7297c88befa36912ef",
-      "evaluated_at": "2026-09-25T16:52:38.499399-05:00"
+      "evaluated_at": "2026-09-25T17:03:51.612549-05:00"
     },
     "classification": {
       "criteria": "Mayor F1 entre los candidatos que superan el baseline (predecir siempre la clase mayoritaria de entrenamiento).",
@@ -290,7 +290,28 @@
       ],
       "selected_model_type": null,
       "selected_run_id": null,
-      "evaluated_at": "2026-09-25T16:52:38.535323-05:00"
+      "evaluated_at": "2026-09-25T17:03:51.648841-05:00"
+    }
+  },
+  "registry": {
+    "regression": {
+      "registered_model_name": "nota_curso_regresion",
+      "version": 2,
+      "alias": "candidato",
+      "run_id": "a40fd05d1c6d4e7297c88befa36912ef",
+      "model_type": "linear",
+      "status": "candidato",
+      "registered_at": "2026-09-25T17:03:52.954994-05:00"
+    },
+    "classification": {
+      "registered_model_name": "aprobacion_clasificacion",
+      "version": 2,
+      "alias": "archivado",
+      "run_id": "69b3a90cebf54052b2ca4504a5dcb884",
+      "model_type": "logistic",
+      "status": "archivado",
+      "rejection_reason": "No supera el baseline ingenuo (accuracy 0.7849 vs. baseline 0.7849).",
+      "registered_at": "2026-09-25T17:03:53.135890-05:00"
     }
   }
 }

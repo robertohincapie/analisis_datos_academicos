@@ -81,3 +81,23 @@ regresión sí encuentra un candidato válido; en clasificación, **ningún
 candidato supera el baseline todavía**, así que no se selecciona ninguno —
 es el comportamiento esperado, no un error.
 
+### Model Registry
+
+Registrar en MLflow lo que decidió la comparación anterior, con un alias
+por estado:
+
+- `candidato`: superó el baseline (regresión).
+- `archivado`: no lo superó, pero queda registrado con la razón exacta del
+  rechazo (clasificación) — el registry conserva también el historial de
+  lo descartado, no solo lo que funcionó.
+
+```bash
+uv run python -m academic_analysis.registry regression --dataset ING-20260910-101728
+uv run python -m academic_analysis.registry classification --dataset ING-20260910-101728
+```
+
+Requiere haber corrido antes `academic_analysis.compare` para esa tarea.
+El resultado queda en `metadata/<dataset_id>.json`, bajo
+`registry.regression` / `registry.classification`, y es visible en la
+pestaña *Models* de `mlflow ui`.
+
