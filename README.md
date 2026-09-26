@@ -78,8 +78,15 @@ identificador en los cuatro comandos.
 
 > El dataset `ING-20260910-101728` que usan los laboratorios siguientes
 > corresponde a los mismos datos fuente, seudonimizados con otro secreto:
-> los `student_id` difieren, pero cursos, semestres, notas y asistencias
-> son los mismos, y los modelos no usan `student_id`.
+> los `student_id` difieren, pero las filas preparadas (cursos, semestres,
+> notas y asistencias) y el resultado del análisis son idénticos. Las
+> filas quedan, eso sí, en **otro orden**, y la partición
+> entrenamiento/prueba (`train_test_split` con `random_state=42`) depende
+> del orden: por eso, si se entrena con este identificador, las métricas
+> cambian ligeramente (por ejemplo, RMSE 0.88 en vez de 0.83 en la
+> regresión lineal), aunque las conclusiones del Laboratorio 3 son las
+> mismas. Es un ejemplo concreto de que reproducir un experimento no
+> siempre significa obtener exactamente el mismo número.
 
 El análisis responde una pregunta puntual: ¿existe una diferencia
 estadística entre la nota de quienes asisten y quienes no? **No es un
