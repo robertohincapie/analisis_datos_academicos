@@ -74,8 +74,8 @@ app = FastAPI(
 # Contrato de la API
 # ============================================================
 
-class PredictionRequest(BaseModel):
 
+class PredictionRequest(BaseModel):
     n_asistencias: int = Field(
         ge=0,
         description="Número de actividades a las que asistió.",
@@ -95,7 +95,6 @@ class PredictionRequest(BaseModel):
 
 
 class PredictionResponse(BaseModel):
-
     predicted_grade: float
     model_name: str
     model_version: int
@@ -105,6 +104,7 @@ class PredictionResponse(BaseModel):
 # ============================================================
 # Utilidades de predicción
 # ============================================================
+
 
 def _validate_category(
     field_name: str,
@@ -117,8 +117,7 @@ def _validate_category(
         raise HTTPException(
             status_code=422,
             detail=(
-                f"{field_name} desconocido: '{value}'. "
-                f"Valores válidos: {valid_values}"
+                f"{field_name} desconocido: '{value}'. Valores válidos: {valid_values}"
             ),
         )
 
@@ -140,12 +139,9 @@ def _build_model_input(
 
     feature_columns = _state["feature_columns"]
 
-    values: dict[str, float] = {
-        "n_asistencias": request.n_asistencias
-    }
+    values: dict[str, float] = {"n_asistencias": request.n_asistencias}
 
     for column in feature_columns:
-
         if column == "n_asistencias":
             continue
 
@@ -163,6 +159,7 @@ def _build_model_input(
 # ============================================================
 # Endpoints
 # ============================================================
+
 
 @app.get("/health")
 def health() -> dict:
@@ -199,9 +196,7 @@ def predict(request: PredictionRequest) -> PredictionResponse:
 
     model_input = _build_model_input(request)
 
-    prediction = float(
-        _state["model"].predict(model_input)[0]
-    )
+    prediction = float(_state["model"].predict(model_input)[0])
 
     info = _state["info"]
 

@@ -10,7 +10,6 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 INCOMING_DIR = ROOT / "data" / "incoming"
@@ -23,13 +22,13 @@ SCHEMA_FILE = ROOT / "config" / "data_schema.yaml"
 # Utilidades
 # ============================================================
 
+
 def sha256_file(path: Path) -> str:
     """Calcula SHA-256."""
 
     sha256 = hashlib.sha256()
 
     with path.open("rb") as f:
-
         for block in iter(
             lambda: f.read(1024 * 1024),
             b"",
@@ -44,15 +43,10 @@ def load_manifest(
 ) -> tuple[Path, dict]:
     """Carga el manifiesto del dataset."""
 
-    manifest_path = (
-        METADATA_DIR
-        / f"{dataset_id}.json"
-    )
+    manifest_path = METADATA_DIR / f"{dataset_id}.json"
 
     if not manifest_path.exists():
-        raise FileNotFoundError(
-            f"No existe un manifiesto para {dataset_id}."
-        )
+        raise FileNotFoundError(f"No existe un manifiesto para {dataset_id}.")
 
     with manifest_path.open(
         "r",
@@ -73,7 +67,6 @@ def save_manifest(
         "w",
         encoding="utf-8",
     ) as f:
-
         json.dump(
             manifest,
             f,
@@ -86,21 +79,16 @@ def load_schema() -> dict:
     """Carga el contrato de datos."""
 
     if not SCHEMA_FILE.exists():
-        raise FileNotFoundError(
-            f"No existe {SCHEMA_FILE}"
-        )
+        raise FileNotFoundError(f"No existe {SCHEMA_FILE}")
 
     with SCHEMA_FILE.open(
         "r",
         encoding="utf-8",
     ) as f:
-
         schema = yaml.safe_load(f)
 
     if not schema:
-        raise ValueError(
-            "El schema está vacío."
-        )
+        raise ValueError("El schema está vacío.")
 
     return schema
 
@@ -109,41 +97,26 @@ def load_schema() -> dict:
 # Validación estructural
 # ============================================================
 
+
 def validate_columns(
     df: pd.DataFrame,
     schema: dict,
 ) -> None:
     """Valida las columnas esperadas."""
 
-    expected = list(
-        schema["columns"].keys()
-    )
+    expected = list(schema["columns"].keys())
 
-    actual = list(
-        df.columns
-    )
+    actual = list(df.columns)
 
-    missing = (
-        set(expected)
-        - set(actual)
-    )
+    missing = set(expected) - set(actual)
 
-    extra = (
-        set(actual)
-        - set(expected)
-    )
+    extra = set(actual) - set(expected)
 
     if missing:
-        raise ValueError(
-            "Faltan columnas requeridas: "
-            f"{sorted(missing)}"
-        )
+        raise ValueError(f"Faltan columnas requeridas: {sorted(missing)}")
 
     if extra:
-        raise ValueError(
-            "Se encontraron columnas no esperadas: "
-            f"{sorted(extra)}"
-        )
+        raise ValueError(f"Se encontraron columnas no esperadas: {sorted(extra)}")
 
 
 def validate_nulls(
@@ -152,28 +125,16 @@ def validate_nulls(
 ) -> None:
     """Valida campos que no permiten nulos."""
 
-    for column, rules in (
-        schema["columns"].items()
-    ):
-
+    for column, rules in schema["columns"].items():
         if rules.get(
             "nullable",
             True,
         ):
             continue
 
-        invalid = (
-            df[column].isna()
-            | (
-                df[column]
-                .astype(str)
-                .str.strip()
-                == ""
-            )
-        )
+        invalid = df[column].isna() | (df[column].astype(str).str.strip() == "")
 
         if invalid.any():
-
             raise ValueError(
                 f"La columna '{column}' "
                 f"contiene {int(invalid.sum())} "
@@ -185,59 +146,38 @@ def validate_nulls(
 # Validación de tipos y reglas
 # ============================================================
 
+
 def validate_student_id(
     df: pd.DataFrame,
 ) -> None:
 
-    values = (
-        df["student_id"]
-        .astype(str)
-        .str.strip()
-    )
+    values = df["student_id"].astype(str).str.strip()
 
-    invalid = (
-        values == ""
-    )
+    invalid = values == ""
 
     if invalid.any():
-
-        raise ValueError(
-            "Se encontraron student_id vacíos."
-        )
+        raise ValueError("Se encontraron student_id vacíos.")
 
 
 def validate_semester(
     df: pd.DataFrame,
 ) -> None:
 
-    values = (
-        df["Semestre"]
-        .astype(str)
-        .str.strip()
-    )
+    values = df["Semestre"].astype(str).str.strip()
 
     valid = values.map(
-        lambda value:
-            bool(
-                re.fullmatch(
-                    r"\d{4}-[12]",
-                    value,
-                )
+        lambda value: bool(
+            re.fullmatch(
+                r"\d{4}-[12]",
+                value,
             )
+        )
     )
 
     if not valid.all():
+        invalid = sorted(values[~valid].unique())
 
-        invalid = sorted(
-            values[
-                ~valid
-            ].unique()
-        )
-
-        raise ValueError(
-            "Semestres con formato inválido: "
-            f"{invalid}"
-        )
+        raise ValueError(f"Semestres con formato inválido: {invalid}")
 
 
 def validate_grades(
@@ -264,13 +204,7 @@ def validate_grades(
     # de nota
     # --------------------------------------------------
 
-    text = (
-        original
-        .fillna("")
-        .astype(str)
-        .str.strip()
-        .str.upper()
-    )
+    text = original.fillna("").astype(str).str.strip().str.upper()
 
     missing_values = {
         "",
@@ -279,9 +213,7 @@ def validate_grades(
         "NA",
     }
 
-    is_missing = text.isin(
-        missing_values
-    )
+    is_missing = text.isin(missing_values)
 
     # --------------------------------------------------
     # Convertir únicamente las notas existentes
@@ -297,42 +229,20 @@ def validate_grades(
     # representaciones permitidas de ausencia
     # --------------------------------------------------
 
-    invalid_type = (
-        ~is_missing
-        & numeric.isna()
-    )
+    invalid_type = ~is_missing & numeric.isna()
 
     if invalid_type.any():
+        values = original[invalid_type].astype(str).unique().tolist()
 
-        values = (
-            original[
-                invalid_type
-            ]
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        raise ValueError(
-            "Nota Curso contiene valores "
-            "no numéricos: "
-            f"{values[:10]}"
-        )
+        raise ValueError(f"Nota Curso contiene valores no numéricos: {values[:10]}")
 
     # --------------------------------------------------
     # Validar rango
     # --------------------------------------------------
 
-    invalid_range = (
-        numeric.notna()
-        & (
-            (numeric < 0)
-            | (numeric > 5)
-        )
-    )
+    invalid_range = numeric.notna() & ((numeric < 0) | (numeric > 5))
 
     if invalid_range.any():
-
         raise ValueError(
             "Nota Curso debe estar entre "
             "0.0 y 5.0. "
@@ -351,33 +261,17 @@ def validate_attendance_count(
     )
 
     if numeric.isna().any():
+        raise ValueError("n_asistencias contiene valores no numéricos.")
 
-        raise ValueError(
-            "n_asistencias contiene "
-            "valores no numéricos."
-        )
-
-    non_integer = (
-        numeric % 1 != 0
-    )
+    non_integer = numeric % 1 != 0
 
     if non_integer.any():
+        raise ValueError("n_asistencias debe contener números enteros.")
 
-        raise ValueError(
-            "n_asistencias debe contener "
-            "números enteros."
-        )
-
-    negative = (
-        numeric < 0
-    )
+    negative = numeric < 0
 
     if negative.any():
-
-        raise ValueError(
-            "n_asistencias no puede "
-            "ser negativo."
-        )
+        raise ValueError("n_asistencias no puede ser negativo.")
 
 
 def normalize_boolean(
@@ -391,11 +285,7 @@ def normalize_boolean(
     if isinstance(value, bool):
         return value
 
-    value = (
-        str(value)
-        .strip()
-        .lower()
-    )
+    value = str(value).strip().lower()
 
     if value in {
         "true",
@@ -416,13 +306,9 @@ def validate_attendance_flag(
     df: pd.DataFrame,
 ) -> None:
 
-    normalized = (
-        df["asistio"]
-        .map(normalize_boolean)
-    )
+    normalized = df["asistio"].map(normalize_boolean)
 
     if normalized.isna().any():
-
         invalid = (
             df.loc[
                 normalized.isna(),
@@ -434,9 +320,7 @@ def validate_attendance_flag(
         )
 
         raise ValueError(
-            "La columna asistio contiene "
-            "valores no booleanos: "
-            f"{invalid[:10]}"
+            f"La columna asistio contiene valores no booleanos: {invalid[:10]}"
         )
 
 
@@ -454,21 +338,13 @@ def validate_attendance_consistency(
         errors="raise",
     )
 
-    attended = (
-        df["asistio"]
-        .map(normalize_boolean)
-    )
+    attended = df["asistio"].map(normalize_boolean)
 
-    expected = (
-        counts > 0
-    )
+    expected = counts > 0
 
-    inconsistent = (
-        attended != expected
-    )
+    inconsistent = attended != expected
 
     if inconsistent.any():
-
         raise ValueError(
             "Inconsistencia entre "
             "n_asistencias y asistio. "
@@ -480,6 +356,7 @@ def validate_attendance_consistency(
 # ============================================================
 # Inspección de duplicados
 # ============================================================
+
 
 def inspect_duplicate_records(
     df: pd.DataFrame,
@@ -511,16 +388,13 @@ def inspect_duplicate_records(
         keep=False,
     )
 
-    duplicate_rows = int(
-        duplicated.sum()
-    )
+    duplicate_rows = int(duplicated.sum())
 
     # --------------------------------------------------
     # No hay duplicados
     # --------------------------------------------------
 
     if duplicate_rows == 0:
-
         return {
             "duplicate_rows": 0,
             "duplicate_groups": 0,
@@ -531,18 +405,9 @@ def inspect_duplicate_records(
     # Extraer registros involucrados
     # --------------------------------------------------
 
-    duplicates = (
-        df.loc[duplicated]
-        .sort_values(key)
-    )
+    duplicates = df.loc[duplicated].sort_values(key)
 
-    duplicate_groups = int(
-        duplicates[
-            key
-        ]
-        .drop_duplicates()
-        .shape[0]
-    )
+    duplicate_groups = int(duplicates[key].drop_duplicates().shape[0])
 
     # --------------------------------------------------
     # Guardar reporte asociado a esta versión
@@ -554,10 +419,7 @@ def inspect_duplicate_records(
         exist_ok=True,
     )
 
-    report_file = (
-        METADATA_DIR
-        / f"{dataset_id}_duplicates.csv"
-    )
+    report_file = METADATA_DIR / f"{dataset_id}_duplicates.csv"
 
     duplicates.to_csv(
         report_file,
@@ -569,26 +431,15 @@ def inspect_duplicate_records(
     # Mostrar advertencia
     # --------------------------------------------------
 
-    print(
-        "\nADVERTENCIA\n"
-    )
+    print("\nADVERTENCIA\n")
 
-    print(
-        "Se encontraron registros repetidos para "
-        "student_id + Curso + Semestre."
-    )
+    print("Se encontraron registros repetidos para student_id + Curso + Semestre.")
 
-    print(
-        f"  Filas involucradas: {duplicate_rows}"
-    )
+    print(f"  Filas involucradas: {duplicate_rows}")
 
-    print(
-        f"  Grupos repetidos: {duplicate_groups}"
-    )
+    print(f"  Grupos repetidos: {duplicate_groups}")
 
-    print(
-        f"  Reporte: {report_file}"
-    )
+    print(f"  Reporte: {report_file}")
 
     print(
         "\nLos duplicados no invalidan el dataset. "
@@ -597,14 +448,9 @@ def inspect_duplicate_records(
     )
 
     return {
-        "duplicate_rows":
-            duplicate_rows,
-
-        "duplicate_groups":
-            duplicate_groups,
-
-        "report":
-            report_file.name,
+        "duplicate_rows": duplicate_rows,
+        "duplicate_groups": duplicate_groups,
+        "report": report_file.name,
     }
 
 
@@ -612,22 +458,15 @@ def inspect_duplicate_records(
 # Validación completa
 # ============================================================
 
+
 def validate_dataset(
     dataset_id: str,
 ) -> Path:
     """Valida un dataset previamente ingerido."""
 
-    manifest_path, manifest = (
-        load_manifest(
-            dataset_id
-        )
-    )
+    manifest_path, manifest = load_manifest(dataset_id)
 
-    if (
-        manifest.get("status")
-        != "received"
-    ):
-
+    if manifest.get("status") != "received":
         raise ValueError(
             "El dataset debe tener "
             "status='received'. "
@@ -639,46 +478,27 @@ def validate_dataset(
     # Archivo registrado
     # --------------------------------------------------
 
-    input_file = (
-        INCOMING_DIR
-        / manifest["filename"]
-    )
+    input_file = INCOMING_DIR / manifest["filename"]
 
     if not input_file.exists():
-
-        raise FileNotFoundError(
-            f"No existe el archivo registrado: "
-            f"{input_file}"
-        )
+        raise FileNotFoundError(f"No existe el archivo registrado: {input_file}")
 
     # --------------------------------------------------
     # Integridad
     # --------------------------------------------------
 
-    current_hash = (
-        sha256_file(
-            input_file
-        )
-    )
+    current_hash = sha256_file(input_file)
 
-    if (
-        current_hash
-        != manifest["sha256"]
-    ):
-
+    if current_hash != manifest["sha256"]:
         raise ValueError(
-            "El archivo fue modificado después "
-            "de la ingesta. "
-            "El SHA-256 no coincide."
+            "El archivo fue modificado después de la ingesta. El SHA-256 no coincide."
         )
 
     # --------------------------------------------------
     # Cargar
     # --------------------------------------------------
 
-    df = pd.read_csv(
-        input_file
-    )
+    df = pd.read_csv(input_file)
 
     schema = load_schema()
 
@@ -713,11 +533,9 @@ def validate_dataset(
     # Los duplicados son una ADVERTENCIA.
     # --------------------------------------------------
 
-    duplicate_report = (
-        inspect_duplicate_records(
-            df,
-            dataset_id,
-        )
+    duplicate_report = inspect_duplicate_records(
+        df,
+        dataset_id,
     )
 
     # --------------------------------------------------
@@ -730,38 +548,12 @@ def validate_dataset(
     )
 
     validation = {
-
-        "rows":
-            len(df),
-
-        "students":
-            int(
-                df[
-                    "student_id"
-                ].nunique()
-            ),
-
-        "courses":
-            int(
-                df[
-                    "Curso"
-                ].nunique()
-            ),
-
-        "semesters":
-            int(
-                df[
-                    "Semestre"
-                ].nunique()
-            ),
-
-        "missing_grades":
-            int(
-                grades.isna().sum()
-            ),
-
-        "duplicates":
-            duplicate_report,
+        "rows": len(df),
+        "students": int(df["student_id"].nunique()),
+        "courses": int(df["Curso"].nunique()),
+        "semesters": int(df["Semestre"].nunique()),
+        "missing_grades": int(grades.isna().sum()),
+        "duplicates": duplicate_report,
     }
 
     # --------------------------------------------------
@@ -777,10 +569,7 @@ def validate_dataset(
         exist_ok=True,
     )
 
-    output_file = (
-        VALIDATED_DIR
-        / manifest["filename"]
-    )
+    output_file = VALIDATED_DIR / manifest["filename"]
 
     shutil.copy2(
         input_file,
@@ -791,17 +580,11 @@ def validate_dataset(
     # Actualizar manifiesto
     # --------------------------------------------------
 
-    manifest[
-        "validation"
-    ] = validation
+    manifest["validation"] = validation
 
-    manifest[
-        "validated_file"
-    ] = output_file.name
+    manifest["validated_file"] = output_file.name
 
-    manifest[
-        "status"
-    ] = "validated"
+    manifest["status"] = "validated"
 
     save_manifest(
         manifest_path,
@@ -815,50 +598,36 @@ def validate_dataset(
 # CLI
 # ============================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Valida una versión ingerida "
-            "del dataset."
-        )
+        description=("Valida una versión ingerida del dataset.")
     )
 
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo "
-            "ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     args = parser.parse_args()
 
     try:
+        output = validate_dataset(args.dataset)
 
-        output = validate_dataset(
-            args.dataset
-        )
-
-    except Exception as exc:
-
-        print(
-            "\nVALIDACIÓN FALLIDA\n"
-        )
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
+        print("\nVALIDACIÓN FALLIDA\n")
 
         print(exc)
 
         raise SystemExit(1)
 
-    print(
-        "\nVALIDACIÓN CORRECTA\n"
-    )
+    print("\nVALIDACIÓN CORRECTA\n")
 
-    print(
-        f"Dataset validado: {output}"
-    )
+    print(f"Dataset validado: {output}")
 
 
 if __name__ == "__main__":

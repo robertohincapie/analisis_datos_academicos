@@ -6,20 +6,15 @@ from academic_analysis.ingest import extract_dataset_id, sha256_file
 
 
 class TestExtractDatasetId:
-
     def test_extracts_from_expected_filename(self):
 
-        result = extract_dataset_id(
-            "academic_performance_ING-20260910-101728.csv"
-        )
+        result = extract_dataset_id("academic_performance_ING-20260910-101728.csv")
 
         assert result == "ING-20260910-101728"
 
     def test_extracts_even_with_extra_text_around(self):
 
-        result = extract_dataset_id(
-            "copia_final_ING-20260910-101728_v2.csv"
-        )
+        result = extract_dataset_id("copia_final_ING-20260910-101728_v2.csv")
 
         assert result == "ING-20260910-101728"
 
@@ -35,16 +30,13 @@ class TestExtractDatasetId:
 
 
 class TestSha256File:
-
     def test_matches_hashlib_reference(self, tmp_path):
 
         file_path = tmp_path / "sample.txt"
         content = "contenido de prueba para sha256" * 100
         file_path.write_text(content, encoding="utf-8")
 
-        expected = hashlib.sha256(
-            content.encode("utf-8")
-        ).hexdigest()
+        expected = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         assert sha256_file(file_path) == expected
 

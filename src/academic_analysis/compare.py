@@ -24,6 +24,7 @@ from academic_analysis.train import (
 # Capítulo 3, "¿Cuál modelo debemos desplegar?".
 # ============================================================
 
+
 def regression_baseline_rmse(
     dataset_id: str,
     test_size: float = 0.2,
@@ -91,14 +92,13 @@ def classification_baseline_accuracy(
 
     majority_class = y_train.mode().iloc[0]
 
-    return float(
-        (y_test == majority_class).mean()
-    )
+    return float((y_test == majority_class).mean())
 
 
 # ============================================================
 # Selección
 # ============================================================
+
 
 def select_regression_model(
     dataset_id: str,
@@ -112,14 +112,11 @@ def select_regression_model(
 
     manifest_path, manifest = load_manifest(dataset_id)
 
-    candidates = manifest.get("training", {}).get(
-        "regression", {}
-    )
+    candidates = manifest.get("training", {}).get("regression", {})
 
     if not candidates:
         raise ValueError(
-            "No hay modelos de regresión entrenados "
-            "todavía para este dataset."
+            "No hay modelos de regresión entrenados todavía para este dataset."
         )
 
     baseline_rmse = regression_baseline_rmse(dataset_id)
@@ -127,7 +124,6 @@ def select_regression_model(
     ranked = []
 
     for model_type, training in candidates.items():
-
         rmse = training["metrics"]["rmse"]
 
         ranked.append(
@@ -157,15 +153,9 @@ def select_regression_model(
             "rmse": baseline_rmse,
         },
         "candidates": ranked,
-        "selected_model_type": (
-            selected["model_type"] if selected else None
-        ),
-        "selected_run_id": (
-            selected["run_id"] if selected else None
-        ),
-        "evaluated_at": (
-            datetime.now().astimezone().isoformat()
-        ),
+        "selected_model_type": (selected["model_type"] if selected else None),
+        "selected_run_id": (selected["run_id"] if selected else None),
+        "evaluated_at": (datetime.now().astimezone().isoformat()),
     }
 
     manifest.setdefault("selection", {})
@@ -188,24 +178,18 @@ def select_classification_model(
 
     manifest_path, manifest = load_manifest(dataset_id)
 
-    candidates = manifest.get("training", {}).get(
-        "classification", {}
-    )
+    candidates = manifest.get("training", {}).get("classification", {})
 
     if not candidates:
         raise ValueError(
-            "No hay modelos de clasificación entrenados "
-            "todavía para este dataset."
+            "No hay modelos de clasificación entrenados todavía para este dataset."
         )
 
-    baseline_accuracy = classification_baseline_accuracy(
-        dataset_id
-    )
+    baseline_accuracy = classification_baseline_accuracy(dataset_id)
 
     ranked = []
 
     for model_type, training in candidates.items():
-
         accuracy = training["metrics"]["accuracy"]
 
         ranked.append(
@@ -231,22 +215,13 @@ def select_classification_model(
             "de entrenamiento)."
         ),
         "baseline": {
-            "description": (
-                "Predecir siempre la clase mayoritaria "
-                "(aprueba)."
-            ),
+            "description": ("Predecir siempre la clase mayoritaria (aprueba)."),
             "accuracy": baseline_accuracy,
         },
         "candidates": ranked,
-        "selected_model_type": (
-            selected["model_type"] if selected else None
-        ),
-        "selected_run_id": (
-            selected["run_id"] if selected else None
-        ),
-        "evaluated_at": (
-            datetime.now().astimezone().isoformat()
-        ),
+        "selected_model_type": (selected["model_type"] if selected else None),
+        "selected_run_id": (selected["run_id"] if selected else None),
+        "evaluated_at": (datetime.now().astimezone().isoformat()),
     }
 
     manifest.setdefault("selection", {})
@@ -260,6 +235,7 @@ def select_classification_model(
 # ============================================================
 # CLI
 # ============================================================
+
 
 def _print_selection(task: str, selection: dict) -> None:
 
@@ -277,7 +253,6 @@ def _print_selection(task: str, selection: dict) -> None:
     print()
 
     if selection["selected_model_type"]:
-
         print(
             "MODELO CANDIDATO SELECCIONADO: "
             f"{selection['selected_model_type']} "
@@ -285,7 +260,6 @@ def _print_selection(task: str, selection: dict) -> None:
         )
 
     else:
-
         print(
             "NINGÚN CANDIDATO SUPERA EL BASELINE.\n"
             "No se selecciona ningún modelo. "
@@ -313,23 +287,20 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     args = parser.parse_args()
 
     try:
-
         if args.task == "regression":
             selection = select_regression_model(args.dataset)
         else:
             selection = select_classification_model(args.dataset)
 
-    except Exception as exc:
-
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
         print("COMPARACIÓN FALLIDA\n")
         print(exc)
         raise SystemExit(1)

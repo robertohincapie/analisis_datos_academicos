@@ -47,9 +47,7 @@ def export_regression_bundle(
 
     _, manifest = load_manifest(dataset_id)
 
-    registry_entry = manifest.get("registry", {}).get(
-        "regression"
-    )
+    registry_entry = manifest.get("registry", {}).get("regression")
 
     if not registry_entry:
         raise ValueError(
@@ -60,23 +58,14 @@ def export_regression_bundle(
 
     model_type = registry_entry["model_type"]
 
-    source_model = (
-        MODELS_DIR
-        / f"regression_{model_type}_{dataset_id}.joblib"
-    )
+    source_model = MODELS_DIR / f"regression_{model_type}_{dataset_id}.joblib"
 
     if not source_model.exists():
-        raise FileNotFoundError(
-            f"No existe el artefacto del modelo: {source_model}"
-        )
+        raise FileNotFoundError(f"No existe el artefacto del modelo: {source_model}")
 
     bundled = joblib.load(source_model)
 
-    metrics = (
-        manifest["training"]["regression"][model_type][
-            "metrics"
-        ]
-    )
+    metrics = manifest["training"]["regression"][model_type]["metrics"]
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -119,6 +108,7 @@ def export_regression_bundle(
 # CLI
 # ============================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -131,10 +121,7 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     args = parser.parse_args()
@@ -142,8 +129,9 @@ def main() -> None:
     try:
         output_dir = export_regression_bundle(args.dataset)
 
-    except Exception as exc:
-
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
         print("EMPAQUETADO FALLIDO\n")
         print(exc)
         raise SystemExit(1)

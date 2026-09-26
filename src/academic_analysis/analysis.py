@@ -1,7 +1,4 @@
 from __future__ import annotations
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.patches import Patch
 
 import argparse
 import hashlib
@@ -9,9 +6,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from matplotlib.patches import Patch
 from scipy.stats import ttest_ind
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,6 +22,7 @@ METADATA_DIR = ROOT / "metadata"
 # ============================================================
 # Utilidades
 # ============================================================
+
 
 def create_analysis_plot(
     results_df: pd.DataFrame,
@@ -46,11 +46,7 @@ def create_analysis_plot(
     # Ordenar alfabéticamente para facilitar lectura
     # --------------------------------------------------
 
-    plot_df = (
-        plot_df
-        .sort_values("Curso")
-        .reset_index(drop=True)
-    )
+    plot_df = plot_df.sort_values("Curso").reset_index(drop=True)
 
     n_courses = len(plot_df)
 
@@ -74,16 +70,13 @@ def create_analysis_plot(
         n_courses * 1.5,
     )
 
-    fig, ax = plt.subplots(
-        figsize=(figure_width, 7)
-    )
+    fig, ax = plt.subplots(figsize=(figure_width, 7))
 
     # --------------------------------------------------
     # Fondos según prueba de hipótesis
     # --------------------------------------------------
 
     for i, row in plot_df.iterrows():
-
         significant = row["significativo"]
 
         if pd.isna(significant):
@@ -130,15 +123,13 @@ def create_analysis_plot(
     def add_labels(bars):
 
         for bar in bars:
-
             height = bar.get_height()
 
             if np.isnan(height):
                 continue
 
             ax.text(
-                bar.get_x()
-                + bar.get_width() / 2,
+                bar.get_x() + bar.get_width() / 2,
                 height + 0.04,
                 f"{height:.2f}",
                 ha="center",
@@ -146,20 +137,15 @@ def create_analysis_plot(
                 fontsize=9,
             )
 
-    add_labels(
-        bars_attended
-    )
+    add_labels(bars_attended)
 
-    add_labels(
-        bars_not_attended
-    )
+    add_labels(bars_not_attended)
 
     # --------------------------------------------------
     # p-value por curso
     # --------------------------------------------------
 
     for i, row in plot_df.iterrows():
-
         p_value = row["p_value"]
 
         if pd.isna(p_value):
@@ -190,18 +176,11 @@ def create_analysis_plot(
         5.55,
     )
 
-    ax.set_ylabel(
-        "Nota promedio"
-    )
+    ax.set_ylabel("Nota promedio")
 
-    ax.set_xlabel(
-        "Curso"
-    )
+    ax.set_xlabel("Curso")
 
-    ax.set_title(
-        "Desempeño promedio según asistencia "
-        "a actividades académicas"
-    )
+    ax.set_title("Desempeño promedio según asistencia a actividades académicas")
 
     ax.set_xticks(x)
 
@@ -233,9 +212,7 @@ def create_analysis_plot(
         loc="upper left",
     )
 
-    ax.add_artist(
-        bar_legend
-    )
+    ax.add_artist(bar_legend)
 
     # --------------------------------------------------
     # Leyenda de hipótesis
@@ -271,10 +248,7 @@ def create_analysis_plot(
     fig.text(
         0.5,
         0.01,
-        (
-            "Prueba t de Welch bilateral. "
-            "H₀: las medias de ambos grupos son iguales."
-        ),
+        ("Prueba t de Welch bilateral. H₀: las medias de ambos grupos son iguales."),
         ha="center",
         fontsize=9,
     )
@@ -300,6 +274,7 @@ def create_analysis_plot(
 
     plt.close(fig)
 
+
 def sha256_file(path: Path) -> str:
     """Calcula SHA-256 de un archivo."""
 
@@ -320,15 +295,10 @@ def load_manifest(
 ) -> tuple[Path, dict]:
     """Carga el manifiesto del dataset."""
 
-    manifest_path = (
-        METADATA_DIR
-        / f"{dataset_id}.json"
-    )
+    manifest_path = METADATA_DIR / f"{dataset_id}.json"
 
     if not manifest_path.exists():
-        raise FileNotFoundError(
-            f"No existe un manifiesto para {dataset_id}."
-        )
+        raise FileNotFoundError(f"No existe un manifiesto para {dataset_id}.")
 
     with manifest_path.open(
         "r",
@@ -361,6 +331,7 @@ def save_manifest(
 # Análisis por curso
 # ============================================================
 
+
 def analyze_course(
     course_df: pd.DataFrame,
     course_name: str,
@@ -378,51 +349,32 @@ def analyze_course(
     # Conservar únicamente registros con nota
     # --------------------------------------------------
 
-    data = course_df[
-        course_df["Nota Curso"].notna()
-    ].copy()
+    data = course_df[course_df["Nota Curso"].notna()].copy()
 
     # --------------------------------------------------
     # Separar los grupos
     # --------------------------------------------------
 
-    attended = (
-        data.loc[
-            data["asistio"],
-            "Nota Curso",
-        ]
-        .astype(float)
-    )
+    attended = data.loc[
+        data["asistio"],
+        "Nota Curso",
+    ].astype(float)
 
-    not_attended = (
-        data.loc[
-            ~data["asistio"],
-            "Nota Curso",
-        ]
-        .astype(float)
-    )
+    not_attended = data.loc[
+        ~data["asistio"],
+        "Nota Curso",
+    ].astype(float)
 
     n_attended = len(attended)
     n_not_attended = len(not_attended)
 
-    mean_attended = (
-        attended.mean()
-        if n_attended > 0
-        else None
-    )
+    mean_attended = attended.mean() if n_attended > 0 else None
 
-    mean_not_attended = (
-        not_attended.mean()
-        if n_not_attended > 0
-        else None
-    )
+    mean_not_attended = not_attended.mean() if n_not_attended > 0 else None
 
     difference = (
         mean_attended - mean_not_attended
-        if (
-            mean_attended is not None
-            and mean_not_attended is not None
-        )
+        if (mean_attended is not None and mean_not_attended is not None)
         else None
     )
 
@@ -431,47 +383,20 @@ def analyze_course(
     # en cada grupo para realizar la prueba.
     # --------------------------------------------------
 
-    if (
-        n_attended < 2
-        or n_not_attended < 2
-    ):
-
+    if n_attended < 2 or n_not_attended < 2:
         return {
-            "Curso":
-                course_name,
-
-            "n_con_nota":
-                len(data),
-
-            "n_asisten":
-                n_attended,
-
-            "n_no_asisten":
-                n_not_attended,
-
-            "media_asisten":
-                mean_attended,
-
-            "media_no_asisten":
-                mean_not_attended,
-
-            "diferencia_medias":
-                difference,
-
-            "t_statistic":
-                None,
-
-            "p_value":
-                None,
-
-            "alpha":
-                alpha,
-
-            "significativo":
-                None,
-
-            "resultado":
-                "Muestras insuficientes para realizar la prueba.",
+            "Curso": course_name,
+            "n_con_nota": len(data),
+            "n_asisten": n_attended,
+            "n_no_asisten": n_not_attended,
+            "media_asisten": mean_attended,
+            "media_no_asisten": mean_not_attended,
+            "diferencia_medias": difference,
+            "t_statistic": None,
+            "p_value": None,
+            "alpha": alpha,
+            "significativo": None,
+            "resultado": "Muestras insuficientes para realizar la prueba.",
         }
 
     # --------------------------------------------------
@@ -488,24 +413,17 @@ def analyze_course(
         nan_policy="omit",
     )
 
-    t_statistic = float(
-        test.statistic
-    )
+    t_statistic = float(test.statistic)
 
-    p_value = float(
-        test.pvalue
-    )
+    p_value = float(test.pvalue)
 
-    significant = (
-        p_value < alpha
-    )
+    significant = p_value < alpha
 
     # --------------------------------------------------
     # Interpretación
     # --------------------------------------------------
 
     if significant:
-
         result = (
             "Se rechaza H0. "
             "Existe evidencia estadística de una "
@@ -513,7 +431,6 @@ def analyze_course(
         )
 
     else:
-
         result = (
             "No se rechaza H0. "
             "No existe evidencia estadística suficiente "
@@ -521,47 +438,25 @@ def analyze_course(
         )
 
     return {
-        "Curso":
-            course_name,
-
-        "n_con_nota":
-            len(data),
-
-        "n_asisten":
-            n_attended,
-
-        "n_no_asisten":
-            n_not_attended,
-
-        "media_asisten":
-            mean_attended,
-
-        "media_no_asisten":
-            mean_not_attended,
-
-        "diferencia_medias":
-            difference,
-
-        "t_statistic":
-            t_statistic,
-
-        "p_value":
-            p_value,
-
-        "alpha":
-            alpha,
-
-        "significativo":
-            significant,
-
-        "resultado":
-            result,
+        "Curso": course_name,
+        "n_con_nota": len(data),
+        "n_asisten": n_attended,
+        "n_no_asisten": n_not_attended,
+        "media_asisten": mean_attended,
+        "media_no_asisten": mean_not_attended,
+        "diferencia_medias": difference,
+        "t_statistic": t_statistic,
+        "p_value": p_value,
+        "alpha": alpha,
+        "significativo": significant,
+        "resultado": result,
     }
 
 
 # ============================================================
 # Análisis completo
 # ============================================================
+
 
 def analyze_dataset(
     dataset_id: str,
@@ -572,11 +467,7 @@ def analyze_dataset(
     del dataset preparado.
     """
 
-    manifest_path, manifest = (
-        load_manifest(
-            dataset_id
-        )
-    )
+    manifest_path, manifest = load_manifest(dataset_id)
 
     # --------------------------------------------------
     # Estado requerido
@@ -586,56 +477,35 @@ def analyze_dataset(
         "prepared",
         "analyzed",
     }:
-
         raise ValueError(
             "El dataset debe estar preparado "
             "antes de analizarse. "
             f"Status actual: {manifest.get('status')}"
         )
 
-    preparation = manifest.get(
-        "preparation"
-    )
+    preparation = manifest.get("preparation")
 
     if not preparation:
-
-        raise ValueError(
-            "El manifiesto no contiene "
-            "información de preparation."
-        )
+        raise ValueError("El manifiesto no contiene información de preparation.")
 
     # --------------------------------------------------
     # Localizar dataset preparado
     # --------------------------------------------------
 
-    input_file = (
-        PREPARED_DIR
-        / preparation["output"]
-    )
+    input_file = PREPARED_DIR / preparation["output"]
 
     if not input_file.exists():
-
-        raise FileNotFoundError(
-            f"No existe el dataset preparado: "
-            f"{input_file}"
-        )
+        raise FileNotFoundError(f"No existe el dataset preparado: {input_file}")
 
     # --------------------------------------------------
     # Comprobar integridad
     # --------------------------------------------------
 
-    current_hash = (
-        sha256_file(
-            input_file
-        )
-    )
+    current_hash = sha256_file(input_file)
 
-    expected_hash = (
-        preparation["sha256"]
-    )
+    expected_hash = preparation["sha256"]
 
     if current_hash != expected_hash:
-
         raise ValueError(
             "El dataset preparado fue modificado. "
             "El SHA-256 no coincide con el manifiesto."
@@ -645,9 +515,7 @@ def analyze_dataset(
     # Cargar
     # --------------------------------------------------
 
-    df = pd.read_csv(
-        input_file
-    )
+    df = pd.read_csv(input_file)
 
     df["Nota Curso"] = pd.to_numeric(
         df["Nota Curso"],
@@ -658,7 +526,6 @@ def analyze_dataset(
     # pero garantizamos la representación.
 
     if df["asistio"].dtype != bool:
-
         df["asistio"] = (
             df["asistio"]
             .astype(str)
@@ -675,11 +542,7 @@ def analyze_dataset(
         )
 
     if df["asistio"].isna().any():
-
-        raise ValueError(
-            "Se encontraron valores inválidos "
-            "en la columna asistio."
-        )
+        raise ValueError("Se encontraron valores inválidos en la columna asistio.")
 
     # --------------------------------------------------
     # Ejecutar análisis por curso
@@ -687,23 +550,16 @@ def analyze_dataset(
 
     results = []
 
-    for course_name, course_df in (
-        df.groupby("Curso")
-    ):
-
+    for course_name, course_df in df.groupby("Curso"):
         result = analyze_course(
             course_df,
             course_name,
             alpha,
         )
 
-        results.append(
-            result
-        )
+        results.append(result)
 
-    results_df = pd.DataFrame(
-        results
-    )
+    results_df = pd.DataFrame(results)
 
     # --------------------------------------------------
     # Ordenar por p-value
@@ -712,14 +568,10 @@ def analyze_dataset(
     # aparecen primero.
     # --------------------------------------------------
 
-    results_df = (
-        results_df
-        .sort_values(
-            by="p_value",
-            na_position="last",
-        )
-        .reset_index(drop=True)
-    )
+    results_df = results_df.sort_values(
+        by="p_value",
+        na_position="last",
+    ).reset_index(drop=True)
 
     # --------------------------------------------------
     # Guardar resultados
@@ -730,20 +582,11 @@ def analyze_dataset(
         exist_ok=True,
     )
 
-    csv_output = (
-        RESULTS_DIR
-        / f"analysis_{dataset_id}.csv"
-    )
+    csv_output = RESULTS_DIR / f"analysis_{dataset_id}.csv"
 
-    json_output = (
-        RESULTS_DIR
-        / f"analysis_{dataset_id}.json"
-    )
+    json_output = RESULTS_DIR / f"analysis_{dataset_id}.json"
 
-    plot_output = (
-        RESULTS_DIR
-        / f"analysis_{dataset_id}.png"
-    )
+    plot_output = RESULTS_DIR / f"analysis_{dataset_id}.png"
     results_df.to_csv(
         csv_output,
         index=False,
@@ -755,41 +598,25 @@ def analyze_dataset(
     # --------------------------------------------------
 
     analysis_document = {
-        "dataset_id":
-            dataset_id,
-
-        "analyzed_at":
-            datetime.now()
-            .astimezone()
-            .isoformat(),
-
-        "method":
-            "Welch independent two-sample t-test",
-
+        "dataset_id": dataset_id,
+        "analyzed_at": datetime.now().astimezone().isoformat(),
+        "method": "Welch independent two-sample t-test",
         "hypothesis": {
-            "H0":
-                "La nota promedio de quienes asisten "
-                "es igual a la nota promedio de quienes "
-                "no asisten.",
-
-            "H1":
-                "La nota promedio de quienes asisten "
-                "es diferente de la nota promedio de "
-                "quienes no asisten.",
+            "H0": "La nota promedio de quienes asisten "
+            "es igual a la nota promedio de quienes "
+            "no asisten.",
+            "H1": "La nota promedio de quienes asisten "
+            "es diferente de la nota promedio de "
+            "quienes no asisten.",
         },
-
-        "alpha":
-            alpha,
-
-        "courses":
-            results,
+        "alpha": alpha,
+        "courses": results,
     }
 
     with json_output.open(
         "w",
         encoding="utf-8",
     ) as f:
-
         json.dump(
             analysis_document,
             f,
@@ -806,49 +633,21 @@ def analyze_dataset(
     # --------------------------------------------------
 
     analysis = {
-        "method":
-            "Welch independent two-sample t-test",
-
-        "alpha":
-            alpha,
-
-        "courses_analyzed":
-            len(results_df),
-
-        "courses_significant":
-            int(
-                (
-                    results_df["significativo"]
-                    == True
-                ).sum()
-            ),
-
-        "csv_output":
-            csv_output.name,
-
-        "json_output":
-            json_output.name,
-
-        "plot_output":
-            plot_output.name,
-
-        "csv_sha256":
-            sha256_file(csv_output),
-
-        "json_sha256":
-            sha256_file(json_output),
-
-        "plot_sha256":
-            sha256_file(plot_output),
+        "method": "Welch independent two-sample t-test",
+        "alpha": alpha,
+        "courses_analyzed": len(results_df),
+        "courses_significant": int((results_df["significativo"] == True).sum()),
+        "csv_output": csv_output.name,
+        "json_output": json_output.name,
+        "plot_output": plot_output.name,
+        "csv_sha256": sha256_file(csv_output),
+        "json_sha256": sha256_file(json_output),
+        "plot_sha256": sha256_file(plot_output),
     }
 
-    manifest[
-        "analysis"
-    ] = analysis
+    manifest["analysis"] = analysis
 
-    manifest[
-        "status"
-    ] = "analyzed"
+    manifest["status"] = "analyzed"
 
     save_manifest(
         manifest_path,
@@ -866,72 +665,51 @@ def analyze_dataset(
 # CLI
 # ============================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Analiza la relación entre asistencia "
-            "y desempeño académico."
-        )
+        description=("Analiza la relación entre asistencia y desempeño académico.")
     )
 
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     parser.add_argument(
         "--alpha",
         type=float,
         default=0.05,
-        help=(
-            "Nivel de significancia. "
-            "Valor por defecto: 0.05."
-        ),
+        help=("Nivel de significancia. Valor por defecto: 0.05."),
     )
 
     args = parser.parse_args()
 
     try:
+        print(f"\nAnalizando dataset: {args.dataset}\n")
 
-        print(
-            "\nAnalizando dataset:"
-            f" {args.dataset}\n"
+        csv_output, json_output, plot_output = analyze_dataset(
+            dataset_id=args.dataset,
+            alpha=args.alpha,
         )
 
-        csv_output, json_output, plot_output = (
-            analyze_dataset(
-                dataset_id=args.dataset,
-                alpha=args.alpha,
-            )
-        )
-
-
-    except Exception as exc:
-
-        print(
-            "ANÁLISIS FALLIDO\n"
-        )
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
+        print("ANÁLISIS FALLIDO\n")
 
         print(exc)
 
         raise SystemExit(1)
 
-    print(
-        "ANÁLISIS CORRECTO\n"
-    )
+    print("ANÁLISIS CORRECTO\n")
 
-    print(
-        f"Resultados CSV : {csv_output}"
-    )
+    print(f"Resultados CSV : {csv_output}")
 
-    print(
-        f"Resultados JSON: {json_output}"
-    )
+    print(f"Resultados JSON: {json_output}")
+    print(f"Gráfica        : {plot_output}")
 
 
 if __name__ == "__main__":

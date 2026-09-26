@@ -32,10 +32,7 @@ def loaded_state():
 
 
 class TestBuildModelInput:
-
-    def test_known_reference_category_becomes_all_zero_dummies(
-        self, loaded_state
-    ):
+    def test_known_reference_category_becomes_all_zero_dummies(self, loaded_state):
 
         # "Cálculo" y "2026-1" fueron la categoría de
         # referencia (drop_first) en entrenamiento: no
@@ -52,9 +49,7 @@ class TestBuildModelInput:
         assert model_input["Semestre_2026-2"].iloc[0] == 0
         assert model_input["n_asistencias"].iloc[0] == 5
 
-    def test_non_reference_category_activates_its_dummy(
-        self, loaded_state
-    ):
+    def test_non_reference_category_activates_its_dummy(self, loaded_state):
 
         request = api.PredictionRequest(
             n_asistencias=2,
@@ -67,9 +62,7 @@ class TestBuildModelInput:
         assert model_input["Curso_Física"].iloc[0] == 1
         assert model_input["Semestre_2026-2"].iloc[0] == 1
 
-    def test_output_columns_match_feature_columns_order(
-        self, loaded_state
-    ):
+    def test_output_columns_match_feature_columns_order(self, loaded_state):
 
         request = api.PredictionRequest(
             n_asistencias=1,
@@ -87,7 +80,6 @@ class TestBuildModelInput:
 
 
 class TestValidateCategory:
-
     def test_accepts_known_value(self, loaded_state):
         api._validate_category("Curso", "Física")
 

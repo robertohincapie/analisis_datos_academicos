@@ -31,7 +31,6 @@ def make_df() -> pd.DataFrame:
 
 
 class TestEncodeFeatures:
-
     def test_drops_first_category_per_column(self):
 
         df = make_df()
@@ -41,14 +40,8 @@ class TestEncodeFeatures:
         # drop_first=True: una de las dos categorías de
         # Curso y una de Semestre no deberían aparecer
         # como columna dummy.
-        curso_columns = [
-            c for c in encoded.columns if c.startswith("Curso_")
-        ]
-        semestre_columns = [
-            c
-            for c in encoded.columns
-            if c.startswith("Semestre_")
-        ]
+        curso_columns = [c for c in encoded.columns if c.startswith("Curso_")]
+        semestre_columns = [c for c in encoded.columns if c.startswith("Semestre_")]
 
         assert len(curso_columns) == 1
         assert len(semestre_columns) == 1
@@ -68,7 +61,6 @@ class TestEncodeFeatures:
 
 
 class TestBuildTrainingFrame:
-
     def test_drops_rows_without_grade(self):
 
         df = make_df()
@@ -90,7 +82,6 @@ class TestBuildTrainingFrame:
 
 
 class TestBuildClassificationFrame:
-
     def test_applies_default_passing_grade(self):
 
         df = make_df()

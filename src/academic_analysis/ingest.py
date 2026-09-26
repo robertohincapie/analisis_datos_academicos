@@ -7,7 +7,6 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 INCOMING_DIR = ROOT / "data" / "incoming"
@@ -17,6 +16,7 @@ METADATA_DIR = ROOT / "metadata"
 # ============================================================
 # Utilidades
 # ============================================================
+
 
 def sha256_file(path: Path) -> str:
     """Calcula el SHA-256 de un archivo."""
@@ -65,6 +65,7 @@ def extract_dataset_id(filename: str) -> str:
 # Ingesta
 # ============================================================
 
+
 def ingest_file(file_path: Path) -> Path:
     """
     Registra formalmente un archivo ubicado en data/incoming.
@@ -78,41 +79,30 @@ def ingest_file(file_path: Path) -> Path:
     # --------------------------------------------------
 
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"No existe el archivo: {file_path}"
-        )
+        raise FileNotFoundError(f"No existe el archivo: {file_path}")
 
     if not file_path.is_file():
-        raise ValueError(
-            f"La ruta no corresponde a un archivo: {file_path}"
-        )
+        raise ValueError(f"La ruta no corresponde a un archivo: {file_path}")
 
     # --------------------------------------------------
     # El archivo debe estar en data/incoming
     # --------------------------------------------------
 
     if file_path.parent != incoming_dir:
-        raise ValueError(
-            "El archivo debe encontrarse directamente "
-            "en data/incoming/."
-        )
+        raise ValueError("El archivo debe encontrarse directamente en data/incoming/.")
 
     # --------------------------------------------------
     # Solo aceptamos CSV
     # --------------------------------------------------
 
     if file_path.suffix.lower() != ".csv":
-        raise ValueError(
-            "El archivo de entrada debe ser CSV."
-        )
+        raise ValueError("El archivo de entrada debe ser CSV.")
 
     # --------------------------------------------------
     # Obtener dataset_id
     # --------------------------------------------------
 
-    dataset_id = extract_dataset_id(
-        file_path.name
-    )
+    dataset_id = extract_dataset_id(file_path.name)
 
     # --------------------------------------------------
     # Evitar registrar dos veces el mismo dataset
@@ -123,10 +113,7 @@ def ingest_file(file_path: Path) -> Path:
         exist_ok=True,
     )
 
-    manifest_path = (
-        METADATA_DIR
-        / f"{dataset_id}.json"
-    )
+    manifest_path = METADATA_DIR / f"{dataset_id}.json"
 
     if manifest_path.exists():
         raise FileExistsError(
@@ -138,45 +125,27 @@ def ingest_file(file_path: Path) -> Path:
     # Integridad
     # --------------------------------------------------
 
-    file_hash = sha256_file(
-        file_path
-    )
+    file_hash = sha256_file(file_path)
 
-    file_size = (
-        file_path.stat().st_size
-    )
+    file_size = file_path.stat().st_size
 
     # --------------------------------------------------
     # Crear manifiesto
     # --------------------------------------------------
 
     manifest = {
-        "dataset_id":
-            dataset_id,
-
-        "filename":
-            file_path.name,
-
-        "sha256":
-            file_hash,
-
-        "size_bytes":
-            file_size,
-
-        "ingested_at":
-            datetime.now()
-            .astimezone()
-            .isoformat(),
-
-        "status":
-            "received",
+        "dataset_id": dataset_id,
+        "filename": file_path.name,
+        "sha256": file_hash,
+        "size_bytes": file_size,
+        "ingested_at": datetime.now().astimezone().isoformat(),
+        "status": "received",
     }
 
     with manifest_path.open(
         "w",
         encoding="utf-8",
     ) as f:
-
         json.dump(
             manifest,
             f,
@@ -191,49 +160,36 @@ def ingest_file(file_path: Path) -> Path:
 # CLI
 # ============================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Registra una nueva versión "
-            "del dataset."
-        )
+        description=("Registra una nueva versión del dataset.")
     )
 
     parser.add_argument(
         "--file",
         required=True,
-        help=(
-            "Archivo CSV ubicado en "
-            "data/incoming/."
-        ),
+        help=("Archivo CSV ubicado en data/incoming/."),
     )
 
     args = parser.parse_args()
 
     try:
+        manifest_path = ingest_file(Path(args.file))
 
-        manifest_path = ingest_file(
-            Path(args.file)
-        )
-
-    except Exception as exc:
-
-        print(
-            "\nINGESTA FALLIDA\n"
-        )
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
+        print("\nINGESTA FALLIDA\n")
 
         print(exc)
 
         raise SystemExit(1)
 
-    print(
-        "\nINGESTA CORRECTA\n"
-    )
+    print("\nINGESTA CORRECTA\n")
 
-    print(
-        f"Manifiesto: {manifest_path}"
-    )
+    print(f"Manifiesto: {manifest_path}")
 
 
 if __name__ == "__main__":

@@ -63,6 +63,7 @@ CLASSIFICATION_MODEL_TYPES = (
 # Utilidades
 # ============================================================
 
+
 def sha256_file(path: Path) -> str:
     """Calcula SHA-256 de un archivo."""
 
@@ -83,15 +84,10 @@ def load_manifest(
 ) -> tuple[Path, dict]:
     """Carga el manifiesto del dataset."""
 
-    manifest_path = (
-        METADATA_DIR
-        / f"{dataset_id}.json"
-    )
+    manifest_path = METADATA_DIR / f"{dataset_id}.json"
 
     if not manifest_path.exists():
-        raise FileNotFoundError(
-            f"No existe un manifiesto para {dataset_id}."
-        )
+        raise FileNotFoundError(f"No existe un manifiesto para {dataset_id}.")
 
     with manifest_path.open(
         "r",
@@ -144,9 +140,7 @@ def set_training_entry(
 
     training_section = {
         task_name: candidates
-        for task_name, candidates in manifest.get(
-            "training", {}
-        ).items()
+        for task_name, candidates in manifest.get("training", {}).items()
         if task_name in KNOWN_TASKS
     }
 
@@ -186,9 +180,7 @@ def load_prepared_dataset(
     entrenemos a partir de los datos preparados.
     """
 
-    manifest_path, manifest = load_manifest(
-        dataset_id
-    )
+    manifest_path, manifest = load_manifest(dataset_id)
 
     preparation = manifest.get("preparation")
 
@@ -200,15 +192,10 @@ def load_prepared_dataset(
             "manifiesto."
         )
 
-    input_file = (
-        PREPARED_DIR
-        / preparation["output"]
-    )
+    input_file = PREPARED_DIR / preparation["output"]
 
     if not input_file.exists():
-        raise FileNotFoundError(
-            f"No existe el dataset preparado: {input_file}"
-        )
+        raise FileNotFoundError(f"No existe el dataset preparado: {input_file}")
 
     current_hash = sha256_file(input_file)
     expected_hash = preparation["sha256"]
@@ -245,6 +232,7 @@ def encode_features(
 # Datos de entrenamiento
 # ============================================================
 
+
 def build_training_frame(
     df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.Series]:
@@ -256,9 +244,7 @@ def build_training_frame(
     válida.
     """
 
-    data = df[
-        df[TARGET_COLUMN].notna()
-    ].copy()
+    data = df[df[TARGET_COLUMN].notna()].copy()
 
     y = data[TARGET_COLUMN].astype(float)
 
@@ -285,14 +271,9 @@ def build_classification_frame(
     resultado real ni siquiera conocemos.
     """
 
-    data = df[
-        df[TARGET_COLUMN].notna()
-    ].copy()
+    data = df[df[TARGET_COLUMN].notna()].copy()
 
-    y = (
-        data[TARGET_COLUMN].astype(float)
-        >= passing_grade
-    ).astype(int)
+    y = (data[TARGET_COLUMN].astype(float) >= passing_grade).astype(int)
 
     x = encode_features(data)
 
@@ -366,6 +347,7 @@ def build_classification_estimator(
 # Entrenamiento: regresión
 # ============================================================
 
+
 def train_regression_model(
     dataset_id: str,
     model_type: str = "linear",
@@ -384,16 +366,13 @@ def train_regression_model(
     training.regression.<model_type>.
     """
 
-    manifest_path, manifest, df = load_prepared_dataset(
-        dataset_id
-    )
+    manifest_path, manifest, df = load_prepared_dataset(dataset_id)
 
     x, y = build_training_frame(df)
 
     if len(x) < 10:
         raise ValueError(
-            "No hay suficientes registros con nota "
-            "para entrenar un modelo."
+            "No hay suficientes registros con nota para entrenar un modelo."
         )
 
     x_train, x_test, y_train, y_test = train_test_split(
@@ -431,18 +410,11 @@ def train_regression_model(
     # Registrar el experimento en MLflow
     # --------------------------------------------------
 
-    mlflow.set_tracking_uri(
-        MLFLOW_TRACKING_URI
-    )
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-    mlflow.set_experiment(
-        REGRESSION_EXPERIMENT_NAME
-    )
+    mlflow.set_experiment(REGRESSION_EXPERIMENT_NAME)
 
-    with mlflow.start_run(
-        run_name=f"regression_{model_type}_{dataset_id}"
-    ) as run:
-
+    with mlflow.start_run(run_name=f"regression_{model_type}_{dataset_id}") as run:
         mlflow.set_tag(
             "dataset_id",
             dataset_id,
@@ -491,10 +463,7 @@ def train_regression_model(
         exist_ok=True,
     )
 
-    model_output = (
-        MODELS_DIR
-        / f"regression_{model_type}_{dataset_id}.joblib"
-    )
+    model_output = MODELS_DIR / f"regression_{model_type}_{dataset_id}.joblib"
 
     # Categorías completas observadas en el dataset (no solo
     # las que quedaron como columna dummy, que excluyen la
@@ -504,9 +473,7 @@ def train_regression_model(
 
     categories = {
         "Curso": sorted(df["Curso"].dropna().unique().tolist()),
-        "Semestre": sorted(
-            df["Semestre"].dropna().unique().tolist()
-        ),
+        "Semestre": sorted(df["Semestre"].dropna().unique().tolist()),
     }
 
     joblib.dump(
@@ -564,6 +531,7 @@ def train_regression_model(
 # Entrenamiento: clasificación
 # ============================================================
 
+
 def train_classification_model(
     dataset_id: str,
     model_type: str = "logistic",
@@ -586,9 +554,7 @@ def train_classification_model(
     training.classification.<model_type>.
     """
 
-    manifest_path, manifest, df = load_prepared_dataset(
-        dataset_id
-    )
+    manifest_path, manifest, df = load_prepared_dataset(dataset_id)
 
     x, y = build_classification_frame(
         df,
@@ -597,8 +563,7 @@ def train_classification_model(
 
     if len(x) < 10:
         raise ValueError(
-            "No hay suficientes registros con nota "
-            "para entrenar un modelo."
+            "No hay suficientes registros con nota para entrenar un modelo."
         )
 
     x_train, x_test, y_train, y_test = train_test_split(
@@ -647,12 +612,8 @@ def train_classification_model(
         exist_ok=True,
     )
 
-    confusion_matrix_output = (
-        RESULTS_DIR
-        / (
-            f"classification_{model_type}_{dataset_id}"
-            "_confusion_matrix.png"
-        )
+    confusion_matrix_output = RESULTS_DIR / (
+        f"classification_{model_type}_{dataset_id}_confusion_matrix.png"
     )
 
     display = ConfusionMatrixDisplay(
@@ -664,10 +625,7 @@ def train_classification_model(
 
     display.plot(ax=ax, colorbar=False)
 
-    ax.set_title(
-        f"Matriz de confusión ({model_type}) — "
-        "¿aprueba el curso?"
-    )
+    ax.set_title(f"Matriz de confusión ({model_type}) — ¿aprueba el curso?")
 
     fig.tight_layout()
 
@@ -683,18 +641,11 @@ def train_classification_model(
     # Registrar el experimento en MLflow
     # --------------------------------------------------
 
-    mlflow.set_tracking_uri(
-        MLFLOW_TRACKING_URI
-    )
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-    mlflow.set_experiment(
-        CLASSIFICATION_EXPERIMENT_NAME
-    )
+    mlflow.set_experiment(CLASSIFICATION_EXPERIMENT_NAME)
 
-    with mlflow.start_run(
-        run_name=f"classification_{model_type}_{dataset_id}"
-    ) as run:
-
+    with mlflow.start_run(run_name=f"classification_{model_type}_{dataset_id}") as run:
         mlflow.set_tag(
             "dataset_id",
             dataset_id,
@@ -725,9 +676,7 @@ def train_classification_model(
             }
         )
 
-        mlflow.log_artifact(
-            str(confusion_matrix_output)
-        )
+        mlflow.log_artifact(str(confusion_matrix_output))
 
         mlflow.sklearn.log_model(
             model,
@@ -748,10 +697,7 @@ def train_classification_model(
         exist_ok=True,
     )
 
-    model_output = (
-        MODELS_DIR
-        / f"classification_{model_type}_{dataset_id}.joblib"
-    )
+    model_output = MODELS_DIR / f"classification_{model_type}_{dataset_id}.joblib"
 
     joblib.dump(
         {
@@ -768,9 +714,7 @@ def train_classification_model(
 
     training = {
         "model_type": model_type,
-        "target": (
-            f"{TARGET_COLUMN} >= {passing_grade}"
-        ),
+        "target": (f"{TARGET_COLUMN} >= {passing_grade}"),
         "raw_features": FEATURE_COLUMNS,
         "encoded_features": list(x.columns),
         "test_size": test_size,
@@ -812,6 +756,7 @@ def train_classification_model(
 # CLI
 # ============================================================
 
+
 def _add_common_arguments(
     subparser: argparse.ArgumentParser,
 ) -> None:
@@ -819,10 +764,7 @@ def _add_common_arguments(
     subparser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     subparser.add_argument(
@@ -886,18 +828,13 @@ def main() -> None:
         "--passing-grade",
         type=float,
         default=PASSING_GRADE,
-        help=(
-            "Nota mínima para considerar aprobado "
-            f"(default: {PASSING_GRADE})."
-        ),
+        help=(f"Nota mínima para considerar aprobado (default: {PASSING_GRADE})."),
     )
 
     args = parser.parse_args()
 
     try:
-
         if args.task == "regression":
-
             print(
                 f"\nEntrenando modelo de regresión ({args.model_type}) "
                 f"para el dataset: {args.dataset}\n"
@@ -911,7 +848,6 @@ def main() -> None:
             )
 
         else:
-
             print(
                 "\nEntrenando modelo de clasificación "
                 f"({args.model_type}) "
@@ -926,33 +862,24 @@ def main() -> None:
                 passing_grade=args.passing_grade,
             )
 
-    except Exception as exc:
-
-        print(
-            "ENTRENAMIENTO FALLIDO\n"
-        )
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
+        print("ENTRENAMIENTO FALLIDO\n")
 
         print(exc)
 
         raise SystemExit(1)
 
-    print(
-        "ENTRENAMIENTO CORRECTO\n"
-    )
+    print("ENTRENAMIENTO CORRECTO\n")
 
-    print(
-        f"Modelo guardado en : {model_output}"
-    )
+    print(f"Modelo guardado en : {model_output}")
 
     for metric_name, metric_value in training["metrics"].items():
-
         if isinstance(metric_value, (int, float)):
             print(f"{metric_name:<20}: {metric_value:.4f}")
 
-    print(
-        "MLflow run_id       : "
-        f"{training['mlflow']['run_id']}"
-    )
+    print(f"MLflow run_id       : {training['mlflow']['run_id']}")
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ git checkout main
 | `lab3-paso2-model-registry` | Los modelos seleccionados (y el rechazado) quedan en el MLflow Model Registry. |
 | `lab4-servicio-inferencia` | El modelo candidato se empaqueta, se sirve con FastAPI y se conteneriza con Docker. |
 | `pruebas-automatizadas` | Pruebas reales con pytest sobre el pipeline y el API (antes eran placeholders). Corrige un bug real que estas pruebas encontraron en `api.py`. |
+| `calidad-codigo` | El proyecto cumple Ruff (linting y formato): imports ordenados, formato uniforme y excepciones genéricas justificadas explícitamente. |
 
 Cada tag es un punto donde **todo corre**: `uv sync`, `pytest`, y los
 comandos de esa sección del README funcionan tal como están documentados
@@ -285,3 +286,37 @@ con `curl` no lo había detectado porque, por casualidad, probó justo con
 el curso que sí era la referencia real. Corregido: las columnas se
 construyen explícitamente a partir de `feature_columns`, sin depender de
 cuántas categorías distintas trae la solicitud.
+
+---
+
+## Calidad de código
+
+*(tag `calidad-codigo`)*
+
+```bash
+# Linting: detecta errores y malas prácticas
+uv run ruff check .
+
+# Formato: verifica que todo el código siga el mismo estilo
+uv run ruff format --check .
+
+# Aplicar las correcciones automáticas
+uv run ruff check . --fix
+uv run ruff format .
+```
+
+Ambas verificaciones pasan sin errores. Las correcciones fueron casi todas
+automáticas (orden de imports y formato). Dos requirieron una decisión:
+
+- **`except Exception` en el `main()` de cada comando** (regla `BLE001`).
+  Capturar cualquier excepción suele ser una mala práctica, porque puede
+  ocultar errores. Aquí es intencional: es el borde del comando, donde
+  cualquier fallo se convierte en un mensaje claro (`INGESTA FALLIDA`,
+  etc.) y un código de salida 1, en vez de una traza de Python. En lugar de
+  cambiar ese comportamiento, se marcó con `# noqa: BLE001` y un comentario
+  que explica por qué: silenciar una regla es aceptable **solo si queda
+  justificado en el propio código**.
+- **Variable sin usar en `analysis.py`** (regla `RUF059`): el comando
+  calculaba la ruta de la gráfica pero no la mostraba. Ahora la imprime
+  junto a las rutas de los resultados CSV y JSON.
+

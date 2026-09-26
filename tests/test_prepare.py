@@ -9,7 +9,6 @@ from academic_analysis.prepare import (
 
 
 class TestNormalizeGrades:
-
     @pytest.mark.parametrize(
         "value",
         ["", "-", "N/A", "NA", None],
@@ -32,15 +31,11 @@ class TestNormalizeGrades:
 
     def test_result_column_is_numeric_dtype(self):
 
-        df = pd.DataFrame(
-            {"Nota Curso": ["3.5", "-", "4.0"]}
-        )
+        df = pd.DataFrame({"Nota Curso": ["3.5", "-", "4.0"]})
 
         result = normalize_grades(df)
 
-        assert pd.api.types.is_numeric_dtype(
-            result["Nota Curso"]
-        )
+        assert pd.api.types.is_numeric_dtype(result["Nota Curso"])
 
     def test_does_not_mutate_input(self):
 
@@ -54,7 +49,6 @@ class TestNormalizeGrades:
 
 
 class TestNormalizeTypes:
-
     def test_reconstructs_asistio_from_attendance_count(self):
 
         df = pd.DataFrame(
@@ -91,7 +85,6 @@ class TestNormalizeTypes:
 
 
 class TestResolveDuplicateRecords:
-
     def test_keeps_highest_grade_among_duplicates(self):
 
         df = pd.DataFrame(

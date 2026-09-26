@@ -42,7 +42,6 @@ def make_df(**overrides) -> pd.DataFrame:
 
 
 class TestValidateColumns:
-
     def test_passes_with_exact_columns(self):
         validate_columns(make_df(), SCHEMA)
 
@@ -63,7 +62,6 @@ class TestValidateColumns:
 
 
 class TestValidateNulls:
-
     def test_passes_when_required_fields_present(self):
         validate_nulls(make_df(), SCHEMA)
 
@@ -87,7 +85,6 @@ class TestValidateNulls:
 
 
 class TestValidateStudentId:
-
     def test_passes_with_valid_ids(self):
         validate_student_id(make_df())
 
@@ -100,7 +97,6 @@ class TestValidateStudentId:
 
 
 class TestValidateSemester:
-
     @pytest.mark.parametrize(
         "value",
         ["2026-1", "2026-2", "1999-1"],
@@ -123,7 +119,6 @@ class TestValidateSemester:
 
 
 class TestValidateGrades:
-
     @pytest.mark.parametrize(
         "value",
         ["", "-", "N/A", "NA", "n/a", None],
@@ -155,7 +150,6 @@ class TestValidateGrades:
 
 
 class TestValidateAttendanceCount:
-
     def test_accepts_non_negative_integers(self):
 
         df = make_df(n_asistencias=[0, 5])
@@ -177,7 +171,6 @@ class TestValidateAttendanceCount:
 
 
 class TestNormalizeBoolean:
-
     @pytest.mark.parametrize(
         "value,expected",
         [
@@ -198,7 +191,6 @@ class TestNormalizeBoolean:
 
 
 class TestValidateAttendanceFlag:
-
     def test_passes_with_valid_booleans(self):
         validate_attendance_flag(make_df())
 
@@ -211,7 +203,6 @@ class TestValidateAttendanceFlag:
 
 
 class TestValidateAttendanceConsistency:
-
     def test_passes_when_consistent(self):
 
         df = make_df(

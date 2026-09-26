@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 VALIDATED_DIR = ROOT / "data" / "validated"
@@ -18,6 +17,7 @@ METADATA_DIR = ROOT / "metadata"
 # ============================================================
 # Utilidades
 # ============================================================
+
 
 def sha256_file(path: Path) -> str:
     """Calcula SHA-256 de un archivo."""
@@ -39,15 +39,10 @@ def load_manifest(
 ) -> tuple[Path, dict]:
     """Carga el manifiesto asociado al dataset."""
 
-    manifest_path = (
-        METADATA_DIR
-        / f"{dataset_id}.json"
-    )
+    manifest_path = METADATA_DIR / f"{dataset_id}.json"
 
     if not manifest_path.exists():
-        raise FileNotFoundError(
-            f"No existe un manifiesto para {dataset_id}."
-        )
+        raise FileNotFoundError(f"No existe un manifiesto para {dataset_id}.")
 
     with manifest_path.open(
         "r",
@@ -80,6 +75,7 @@ def save_manifest(
 # Normalización
 # ============================================================
 
+
 def normalize_grades(
     df: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -100,13 +96,7 @@ def normalize_grades(
 
     df = df.copy()
 
-    grade_text = (
-        df["Nota Curso"]
-        .fillna("")
-        .astype(str)
-        .str.strip()
-        .str.upper()
-    )
+    grade_text = df["Nota Curso"].fillna("").astype(str).str.strip().str.upper()
 
     missing_values = {
         "",
@@ -115,9 +105,7 @@ def normalize_grades(
         "NA",
     }
 
-    is_missing = grade_text.isin(
-        missing_values
-    )
+    is_missing = grade_text.isin(missing_values)
 
     df.loc[
         is_missing,
@@ -142,38 +130,21 @@ def normalize_types(
 
     df = df.copy()
 
-    df["student_id"] = (
-        df["student_id"]
-        .astype(str)
-        .str.strip()
-    )
+    df["student_id"] = df["student_id"].astype(str).str.strip()
 
-    df["Curso"] = (
-        df["Curso"]
-        .astype(str)
-        .str.strip()
-    )
+    df["Curso"] = df["Curso"].astype(str).str.strip()
 
-    df["Semestre"] = (
-        df["Semestre"]
-        .astype(str)
-        .str.strip()
-    )
+    df["Semestre"] = df["Semestre"].astype(str).str.strip()
 
-    df["n_asistencias"] = (
-        pd.to_numeric(
-            df["n_asistencias"],
-            errors="raise",
-        )
-        .astype(int)
-    )
+    df["n_asistencias"] = pd.to_numeric(
+        df["n_asistencias"],
+        errors="raise",
+    ).astype(int)
 
     # Reconstruimos asistio desde n_asistencias.
     # La consistencia ya fue comprobada en validate.py.
 
-    df["asistio"] = (
-        df["n_asistencias"] > 0
-    )
+    df["asistio"] = df["n_asistencias"] > 0
 
     return df
 
@@ -181,6 +152,7 @@ def normalize_types(
 # ============================================================
 # Resolución de duplicados
 # ============================================================
+
 
 def resolve_duplicate_records(
     df: pd.DataFrame,
@@ -226,9 +198,7 @@ def resolve_duplicate_records(
         keep=False,
     )
 
-    duplicate_rows_before = int(
-        duplicated.sum()
-    )
+    duplicate_rows_before = int(duplicated.sum())
 
     duplicate_groups_before = int(
         df.loc[
@@ -250,75 +220,53 @@ def resolve_duplicate_records(
     # completamente vacío en cero.
     # --------------------------------------------------
 
-    df = (
-        df
-        .groupby(
-            key,
-            as_index=False,
-            dropna=False,
-        )
-        .agg(
-            {
-                "Nota Curso":
-                    "max",
-
-                "n_asistencias":
-                    lambda x: x.sum(
-                        min_count=1
-                    ),
-            }
-        )
+    df = df.groupby(
+        key,
+        as_index=False,
+        dropna=False,
+    ).agg(
+        {
+            "Nota Curso": "max",
+            "n_asistencias": lambda x: x.sum(min_count=1),
+        }
     )
 
     # --------------------------------------------------
     # Reconstruir asistio
     # --------------------------------------------------
 
-    df["asistio"] = (
-        df["n_asistencias"] > 0
-    )
+    df["asistio"] = df["n_asistencias"] > 0
 
     # --------------------------------------------------
     # Orden estable para facilitar inspección
     # y reproducibilidad
     # --------------------------------------------------
 
-    df = (
-        df
-        .sort_values(
-            by=[
-                "Semestre",
-                "Curso",
-                "student_id",
-            ]
-        )
-        .reset_index(drop=True)
-    )
+    df = df.sort_values(
+        by=[
+            "Semestre",
+            "Curso",
+            "student_id",
+        ]
+    ).reset_index(drop=True)
 
     rows_after = len(df)
 
     report = {
-        "rows_before":
-            rows_before,
-
-        "rows_after":
-            rows_after,
-
-        "duplicate_rows_detected":
-            duplicate_rows_before,
-
-        "duplicate_groups_detected":
-            duplicate_groups_before,
-
-        "duplicate_rows_removed":
-            rows_before - rows_after,
+        "rows_before": rows_before,
+        "rows_after": rows_after,
+        "duplicate_rows_detected": duplicate_rows_before,
+        "duplicate_groups_detected": duplicate_groups_before,
+        "duplicate_rows_removed": rows_before - rows_after,
     }
 
     return df, report
 
+
 # ============================================================
 # Comprobaciones posteriores
 # ============================================================
+
 
 def validate_prepared_dataset(
     df: pd.DataFrame,
@@ -344,7 +292,6 @@ def validate_prepared_dataset(
     )
 
     if duplicated.any():
-
         raise RuntimeError(
             "La preparación terminó con registros "
             "duplicados para "
@@ -355,43 +302,29 @@ def validate_prepared_dataset(
     # Las notas existentes deben estar en rango
     # --------------------------------------------------
 
-    invalid_grade = (
-        df["Nota Curso"].notna()
-        & (
-            (df["Nota Curso"] < 0)
-            | (df["Nota Curso"] > 5)
-        )
+    invalid_grade = df["Nota Curso"].notna() & (
+        (df["Nota Curso"] < 0) | (df["Nota Curso"] > 5)
     )
 
     if invalid_grade.any():
-
-        raise RuntimeError(
-            "La preparación produjo notas "
-            "fuera del rango 0-5."
-        )
+        raise RuntimeError("La preparación produjo notas fuera del rango 0-5.")
 
     # --------------------------------------------------
     # Coherencia de asistencia
     # --------------------------------------------------
 
-    expected_attendance = (
-        df["n_asistencias"] > 0
-    )
+    expected_attendance = df["n_asistencias"] > 0
 
-    if not (
-        df["asistio"]
-        == expected_attendance
-    ).all():
-
+    if not (df["asistio"] == expected_attendance).all():
         raise RuntimeError(
-            "La preparación produjo inconsistencias "
-            "entre asistio y n_asistencias."
+            "La preparación produjo inconsistencias entre asistio y n_asistencias."
         )
 
 
 # ============================================================
 # Preparación completa
 # ============================================================
+
 
 def prepare_dataset(
     dataset_id: str,
@@ -400,11 +333,7 @@ def prepare_dataset(
     Prepara un dataset previamente validado.
     """
 
-    manifest_path, manifest = (
-        load_manifest(
-            dataset_id
-        )
-    )
+    manifest_path, manifest = load_manifest(dataset_id)
 
     # --------------------------------------------------
     # Solo procesamos datasets validados
@@ -423,30 +352,15 @@ def prepare_dataset(
     # Localizar dataset validado
     # --------------------------------------------------
 
-    validated_filename = (
-        manifest.get(
-            "validated_file"
-        )
-    )
+    validated_filename = manifest.get("validated_file")
 
     if not validated_filename:
+        raise ValueError("El manifiesto no contiene 'validated_file'.")
 
-        raise ValueError(
-            "El manifiesto no contiene "
-            "'validated_file'."
-        )
-
-    input_file = (
-        VALIDATED_DIR
-        / validated_filename
-    )
+    input_file = VALIDATED_DIR / validated_filename
 
     if not input_file.exists():
-
-        raise FileNotFoundError(
-            "No existe el dataset validado: "
-            f"{input_file}"
-        )
+        raise FileNotFoundError(f"No existe el dataset validado: {input_file}")
 
     # --------------------------------------------------
     # Verificar que el dataset validado sigue siendo
@@ -455,18 +369,11 @@ def prepare_dataset(
     # validate.py copia el archivo sin modificarlo.
     # --------------------------------------------------
 
-    current_hash = (
-        sha256_file(
-            input_file
-        )
-    )
+    current_hash = sha256_file(input_file)
 
-    expected_hash = (
-        manifest["sha256"]
-    )
+    expected_hash = manifest["sha256"]
 
     if current_hash != expected_hash:
-
         raise ValueError(
             "El dataset validado fue modificado "
             "después de la validación. "
@@ -477,9 +384,7 @@ def prepare_dataset(
     # Cargar
     # --------------------------------------------------
 
-    df = pd.read_csv(
-        input_file
-    )
+    df = pd.read_csv(input_file)
 
     # --------------------------------------------------
     # Preparar
@@ -491,46 +396,30 @@ def prepare_dataset(
 
     df = normalize_types(df)
 
-    df, duplicate_report = (
-        resolve_duplicate_records(
-            df
-        )
-    )
+    df, duplicate_report = resolve_duplicate_records(df)
 
-    validate_prepared_dataset(
-        df
-    )
+    validate_prepared_dataset(df)
 
     # --------------------------------------------------
     # Estadísticas finales
     # --------------------------------------------------
 
-    rows_with_grade = int(
-        df["Nota Curso"]
-        .notna()
-        .sum()
-    )
+    rows_with_grade = int(df["Nota Curso"].notna().sum())
 
-    rows_without_grade = int(
-        df["Nota Curso"]
-        .isna()
-        .sum()
-    )
+    rows_without_grade = int(df["Nota Curso"].isna().sum())
 
     students_with_attendance = int(
         df.loc[
             df["asistio"],
             "student_id",
-        ]
-        .nunique()
+        ].nunique()
     )
 
     students_without_attendance = int(
         df.loc[
             ~df["asistio"],
             "student_id",
-        ]
-        .nunique()
+        ].nunique()
     )
 
     # --------------------------------------------------
@@ -542,13 +431,7 @@ def prepare_dataset(
         exist_ok=True,
     )
 
-    output_file = (
-        PREPARED_DIR
-        / (
-            "academic_performance_prepared_"
-            f"{dataset_id}.csv"
-        )
-    )
+    output_file = PREPARED_DIR / (f"academic_performance_prepared_{dataset_id}.csv")
 
     df.to_csv(
         output_file,
@@ -556,73 +439,31 @@ def prepare_dataset(
         encoding="utf-8-sig",
     )
 
-    output_hash = (
-        sha256_file(
-            output_file
-        )
-    )
+    output_hash = sha256_file(output_file)
 
     # --------------------------------------------------
     # Registrar preparación
     # --------------------------------------------------
 
     preparation = {
-        "input":
-            input_file.name,
-
-        "output":
-            output_file.name,
-
-        "sha256":
-            output_hash,
-
-        "rows_received":
-            rows_received,
-
-        "rows_prepared":
-            len(df),
-
-        "students":
-            int(
-                df["student_id"]
-                .nunique()
-            ),
-
-        "courses":
-            int(
-                df["Curso"]
-                .nunique()
-            ),
-
-        "semesters":
-            int(
-                df["Semestre"]
-                .nunique()
-            ),
-
-        "rows_with_grade":
-            rows_with_grade,
-
-        "rows_without_grade":
-            rows_without_grade,
-
-        "students_with_attendance":
-            students_with_attendance,
-
-        "students_without_attendance":
-            students_without_attendance,
-
-        "duplicates":
-            duplicate_report,
+        "input": input_file.name,
+        "output": output_file.name,
+        "sha256": output_hash,
+        "rows_received": rows_received,
+        "rows_prepared": len(df),
+        "students": int(df["student_id"].nunique()),
+        "courses": int(df["Curso"].nunique()),
+        "semesters": int(df["Semestre"].nunique()),
+        "rows_with_grade": rows_with_grade,
+        "rows_without_grade": rows_without_grade,
+        "students_with_attendance": students_with_attendance,
+        "students_without_attendance": students_without_attendance,
+        "duplicates": duplicate_report,
     }
 
-    manifest[
-        "preparation"
-    ] = preparation
+    manifest["preparation"] = preparation
 
-    manifest[
-        "status"
-    ] = "prepared"
+    manifest["status"] = "prepared"
 
     save_manifest(
         manifest_path,
@@ -636,55 +477,38 @@ def prepare_dataset(
 # CLI
 # ============================================================
 
+
 def main() -> None:
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Prepara un dataset académico "
-            "previamente validado."
-        )
+        description=("Prepara un dataset académico previamente validado.")
     )
 
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo "
-            "ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     args = parser.parse_args()
 
     try:
+        print(f"\nPreparando dataset: {args.dataset}\n")
 
-        print(
-            "\nPreparando dataset:"
-            f" {args.dataset}\n"
-        )
+        output = prepare_dataset(args.dataset)
 
-        output = prepare_dataset(
-            args.dataset
-        )
-
-    except Exception as exc:
-
-        print(
-            "PREPARACIÓN FALLIDA\n"
-        )
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
+        print("PREPARACIÓN FALLIDA\n")
 
         print(exc)
 
         raise SystemExit(1)
 
-    print(
-        "PREPARACIÓN CORRECTA\n"
-    )
+    print("PREPARACIÓN CORRECTA\n")
 
-    print(
-        f"Dataset preparado: {output}"
-    )
+    print(f"Dataset preparado: {output}")
 
 
 if __name__ == "__main__":

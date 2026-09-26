@@ -31,9 +31,7 @@ def _client() -> MlflowClient:
 
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-    return MlflowClient(
-        tracking_uri=MLFLOW_TRACKING_URI
-    )
+    return MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
 
 
 def register_regression_model(
@@ -54,13 +52,9 @@ def register_regression_model(
 
     manifest_path, manifest = load_manifest(dataset_id)
 
-    selection = manifest.get("selection", {}).get(
-        "regression"
-    )
+    selection = manifest.get("selection", {}).get("regression")
 
-    if not selection or not selection.get(
-        "selected_run_id"
-    ):
+    if not selection or not selection.get("selected_run_id"):
         raise ValueError(
             "No hay un modelo de regresión seleccionado "
             "todavía. Ejecute primero "
@@ -71,9 +65,7 @@ def register_regression_model(
     model_type = selection["selected_model_type"]
 
     selected_candidate = next(
-        c
-        for c in selection["candidates"]
-        if c["run_id"] == run_id
+        c for c in selection["candidates"] if c["run_id"] == run_id
     )
 
     model_uri = f"runs:/{run_id}/model"
@@ -114,9 +106,7 @@ def register_regression_model(
         "run_id": run_id,
         "model_type": model_type,
         "status": "candidato",
-        "registered_at": (
-            datetime.now().astimezone().isoformat()
-        ),
+        "registered_at": (datetime.now().astimezone().isoformat()),
     }
 
     manifest.setdefault("registry", {})
@@ -143,9 +133,7 @@ def register_rejected_classification_model(
 
     manifest_path, manifest = load_manifest(dataset_id)
 
-    selection = manifest.get("selection", {}).get(
-        "classification"
-    )
+    selection = manifest.get("selection", {}).get("classification")
 
     if not selection or not selection.get("candidates"):
         raise ValueError(
@@ -215,9 +203,7 @@ def register_rejected_classification_model(
         "model_type": model_type,
         "status": "archivado",
         "rejection_reason": tags["rejection_reason"],
-        "registered_at": (
-            datetime.now().astimezone().isoformat()
-        ),
+        "registered_at": (datetime.now().astimezone().isoformat()),
     }
 
     manifest.setdefault("registry", {})
@@ -231,6 +217,7 @@ def register_rejected_classification_model(
 # ============================================================
 # CLI
 # ============================================================
+
 
 def main() -> None:
 
@@ -249,25 +236,20 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         required=True,
-        help=(
-            "Identificador del dataset, "
-            "por ejemplo ING-20260910-101728."
-        ),
+        help=("Identificador del dataset, por ejemplo ING-20260910-101728."),
     )
 
     args = parser.parse_args()
 
     try:
-
         if args.task == "regression":
             entry = register_regression_model(args.dataset)
         else:
-            entry = register_rejected_classification_model(
-                args.dataset
-            )
+            entry = register_rejected_classification_model(args.dataset)
 
-    except Exception as exc:
-
+    # Borde del comando: cualquier fallo se informa como un error controlado
+    # (mensaje claro + código de salida 1) en vez de una traza de Python.
+    except Exception as exc:  # noqa: BLE001
         print("REGISTRO FALLIDO\n")
         print(exc)
         raise SystemExit(1)
