@@ -54,19 +54,32 @@ Cada etapa deja un rastro verificable (SHA-256, conteos, estado) en
 continuar — así una etapa nunca opera sobre datos que no pasaron por la
 anterior.
 
+El archivo de entrada, ya seudonimizado (sin correos ni nombres), está
+incluido en `data/incoming/academic_performance_ING-20260926-151734.csv`:
+
 ```bash
 # Ingesta
-uv run python -m academic_analysis.ingest --file data/incoming/academic_performance_ING-20260910-101728.csv
+uv run python -m academic_analysis.ingest --file data/incoming/academic_performance_ING-20260926-151734.csv
 
 # Validación
-uv run python -m academic_analysis.validate --dataset ING-20260910-101728
+uv run python -m academic_analysis.validate --dataset ING-20260926-151734
 
 # Preparación
-uv run python -m academic_analysis.prepare --dataset ING-20260910-101728
+uv run python -m academic_analysis.prepare --dataset ING-20260926-151734
 
 # Análisis (prueba de hipótesis: asistencia vs. nota)
-uv run python -m academic_analysis.analysis --dataset ING-20260910-101728
+uv run python -m academic_analysis.analysis --dataset ING-20260926-151734
 ```
+
+La ingesta se niega a registrar dos veces el mismo `dataset_id`. Para
+repetir el laboratorio desde cero, copie el archivo con un identificador
+nuevo (`ING-AAAAMMDD-HHMMSS`, con la fecha y hora actuales) y use ese
+identificador en los cuatro comandos.
+
+> El dataset `ING-20260910-101728` que usan los laboratorios siguientes
+> corresponde a los mismos datos fuente, seudonimizados con otro secreto:
+> los `student_id` difieren, pero cursos, semestres, notas y asistencias
+> son los mismos, y los modelos no usan `student_id`.
 
 El análisis responde una pregunta puntual: ¿existe una diferencia
 estadística entre la nota de quienes asisten y quienes no? **No es un

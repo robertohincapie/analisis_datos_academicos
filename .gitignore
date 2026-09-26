@@ -8,6 +8,8 @@ __pycache__/
 data/incoming/*
 data/validated/*
 !data/incoming/.gitkeep
+# Dataset seudonimizado de ejemplo para el Laboratorio 1 (sin correos ni nombres).
+!data/incoming/academic_performance_ING-20260926-151734.csv
 !data/validated/.gitkeep
 
 # Estado local de seguimiento de experimentos (MLflow).
