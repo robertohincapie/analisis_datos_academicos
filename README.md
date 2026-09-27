@@ -35,6 +35,7 @@ git checkout main
 | `lab4-servicio-inferencia` | El modelo candidato se empaqueta, se sirve con FastAPI y se conteneriza con Docker. |
 | `pruebas-automatizadas` | Pruebas reales con pytest sobre el pipeline y el API (antes eran placeholders). Corrige un bug real que estas pruebas encontraron en `api.py`. |
 | `calidad-codigo` | El proyecto cumple Ruff (linting y formato): imports ordenados, formato uniforme y excepciones genéricas justificadas explícitamente. |
+| `verificacion-automatica` | Tipos revisados con mypy, verificaciones automáticas en cada commit (pre-commit) e integración continua con GitHub Actions. Python fijado en 3.12 (`.python-version`), la misma versión de la imagen de Docker. |
 
 Cada tag es un punto donde **todo corre**: `uv sync`, `pytest`, y los
 comandos de esa sección del README funcionan tal como están documentados
@@ -319,4 +320,73 @@ automáticas (orden de imports y formato). Dos requirieron una decisión:
 - **Variable sin usar en `analysis.py`** (regla `RUF059`): el comando
   calculaba la ruta de la gráfica pero no la mostraba. Ahora la imprime
   junto a las rutas de los resultados CSV y JSON.
+
+---
+
+## Verificación automática: mypy, pre-commit e integración continua
+
+*(tag `verificacion-automatica`)*
+
+Ruff, mypy y pytest solo sirven si alguien se acuerda de ejecutarlos. Este
+proyecto los ejecuta en tres momentos distintos:
+
+| Capa | Cuándo corre | Dónde | ¿Se puede saltar? |
+| ---- | ------------ | ----- | ----------------- |
+| A mano | cuando alguien se acuerda | su computador | sí |
+| pre-commit | en cada `git commit` | su computador | sí (`--no-verify`) |
+| Integración continua | en cada `git push` | servidor limpio de GitHub | no |
+
+### mypy: revisar los tipos sin ejecutar el código
+
+```bash
+uv run mypy
+```
+
+Las anotaciones de tipo (`def f(x: int) -> str`) no las verifica Python al
+ejecutar; mypy sí. Al activarlo encontró, entre otras cosas, que
+`analyze_dataset` declaraba devolver **dos** rutas cuando devolvía **tres**
+(la gráfica se agregó después y la anotación no se actualizó). Las 77
+pruebas pasaban igual: ninguna prueba detecta una documentación que miente.
+Las correcciones no cambiaron ningún resultado: los archivos generados por
+el Laboratorio 1 son idénticos byte a byte antes y después.
+
+La configuración está en `[tool.mypy]` de `pyproject.toml`. scikit-learn y
+joblib no publican información de tipos, así que mypy omite revisarlas; para
+pandas, scipy y PyYAML se instalaron sus paquetes de tipos (`pandas-stubs`,
+`scipy-stubs`, `types-PyYAML`).
+
+### pre-commit: verificar antes de cada commit
+
+Se activa una sola vez por computador:
+
+```bash
+uv run pre-commit install
+```
+
+Desde entonces, cada `git commit` ejecuta Ruff (corrigiendo lo que puede
+corregir solo) y mypy. Si algo falla, el commit no se crea: revise los
+mensajes, vuelva a agregar los archivos (`git add`) y repita el commit. La
+configuración está en `.pre-commit-config.yaml`.
+
+Para ejecutar todas las verificaciones sobre todo el proyecto, sin hacer un
+commit:
+
+```bash
+uv run pre-commit run --all-files
+```
+
+### Integración continua con GitHub Actions
+
+`.github/workflows/ci.yml` define dos trabajos que GitHub ejecuta en cada
+push:
+
+1. **Calidad y pruebas**: instala el proyecto desde `uv.lock` en una
+   máquina limpia y ejecuta Ruff, mypy y pytest.
+2. **Imagen de Docker**: si lo anterior pasó, construye la imagen, inicia
+   el servicio y verifica que `/health` responda.
+
+El resultado se ve en la pestaña *Actions* del repositorio y como una marca
+✅ o ❌ junto a cada commit. Es la única de las tres capas que no depende
+de la disciplina de nadie: verifica que el proyecto funciona **en una
+máquina que no es la suya**.
 

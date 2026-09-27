@@ -1,0 +1,54 @@
+# Integración continua: en cada push y pull request, un servidor limpio
+# de GitHub descarga el proyecto, lo instala desde uv.lock y lo verifica.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    name: Calidad y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10
+
+      - name: Instalar el proyecto (versiones exactas de uv.lock)
+        run: uv sync --locked
+
+      - name: Linting (Ruff)
+        run: uv run ruff check .
+
+      - name: Formato (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Tipos (mypy)
+        run: uv run mypy
+
+      - name: Pruebas (pytest)
+        run: uv run pytest
+
+  contenedor:
+    name: Imagen de Docker
+    needs: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Construir la imagen
+        run: docker build -t academic-performance-api .
+
+      - name: Iniciar el servicio y verificar /health
+        run: |
+          docker run -d --name api -p 8000:8000 academic-performance-api
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8000/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs api
+          exit 1

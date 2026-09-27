@@ -154,6 +154,17 @@ def normalize_types(
 # ============================================================
 
 
+def sum_attendance(values: pd.Series) -> float:
+    """
+    Suma las asistencias de registros duplicados.
+
+    Si todos los valores faltan, el resultado también falta (NaN) en vez
+    de 0: no es lo mismo "no asistió" que "no hay información".
+    """
+
+    return values.sum(min_count=1)
+
+
 def resolve_duplicate_records(
     df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict]:
@@ -227,7 +238,7 @@ def resolve_duplicate_records(
     ).agg(
         {
             "Nota Curso": "max",
-            "n_asistencias": lambda x: x.sum(min_count=1),
+            "n_asistencias": sum_attendance,
         }
     )
 

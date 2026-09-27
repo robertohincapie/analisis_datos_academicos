@@ -19,9 +19,14 @@ dependencies = [
 dev = [
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
+    "mypy>=2.3.1",
     "nbclient>=0.11.0",
+    "pandas-stubs>=3.0.5.260914",
+    "pre-commit>=4.6.2",
     "pytest",
     "ruff",
+    "scipy-stubs>=1.18.1.1",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 # Todo lo que necesita el PIPELINE de datos/modelos (ingesta,
@@ -56,3 +61,13 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 88
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src", "tests"]
+
+# scikit-learn y joblib no publican información de tipos (no traen
+# "py.typed"): mypy no puede revisar sus funciones, solo nuestro código.
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "joblib"]
+ignore_missing_imports = true

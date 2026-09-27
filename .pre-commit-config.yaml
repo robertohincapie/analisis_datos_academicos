@@ -1,0 +1,26 @@
+# Verificaciones que se ejecutan automáticamente en cada `git commit`.
+# Se activan una sola vez por computador con:  uv run pre-commit install
+#
+# Los hooks son "locales": ejecutan las herramientas con `uv run`, así usan
+# exactamente las versiones fijadas en uv.lock (las mismas que el CI).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (linting)
+        entry: uv run ruff check --fix --force-exclude
+        language: system
+        types_or: [python, jupyter]
+
+      - id: ruff-format
+        name: ruff format (formato)
+        entry: uv run ruff format --force-exclude
+        language: system
+        types_or: [python, jupyter]
+
+      - id: mypy
+        name: mypy (tipos)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false

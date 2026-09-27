@@ -76,7 +76,7 @@ def create_analysis_plot(
     # Fondos según prueba de hipótesis
     # --------------------------------------------------
 
-    for i, row in plot_df.iterrows():
+    for i, (_, row) in enumerate(plot_df.iterrows()):
         significant = row["significativo"]
 
         if pd.isna(significant):
@@ -145,7 +145,7 @@ def create_analysis_plot(
     # p-value por curso
     # --------------------------------------------------
 
-    for i, row in plot_df.iterrows():
+    for i, (_, row) in enumerate(plot_df.iterrows()):
         p_value = row["p_value"]
 
         if pd.isna(p_value):
@@ -258,12 +258,12 @@ def create_analysis_plot(
     # --------------------------------------------------
 
     fig.tight_layout(
-        rect=[
+        rect=(
             0,
             0.05,
             1,
             1,
-        ]
+        )
     )
 
     fig.savefig(
@@ -461,10 +461,12 @@ def analyze_course(
 def analyze_dataset(
     dataset_id: str,
     alpha: float = 0.05,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, Path]:
     """
     Ejecuta el análisis para todos los cursos
     del dataset preparado.
+
+    Devuelve las rutas del CSV de resultados, del JSON y de la gráfica.
     """
 
     manifest_path, manifest = load_manifest(dataset_id)
@@ -553,7 +555,7 @@ def analyze_dataset(
     for course_name, course_df in df.groupby("Curso"):
         result = analyze_course(
             course_df,
-            course_name,
+            str(course_name),
             alpha,
         )
 
