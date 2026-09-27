@@ -5,6 +5,11 @@ a partir de datos académicos seudonimizados. Sirve como material práctico
 de la **Unidad 4** ("Despliegue de modelos de Inteligencia Artificial") del
 curso *Técnicas avanzadas de IA*.
 
+> **Estudiantes:** la guía paso a paso para usar este repositorio
+> —requisitos, instalación, cada laboratorio y problemas frecuentes— está
+> en el repositorio del curso:
+> [Lab_Unidad4_Del_modelo_al_servicio.md](https://github.com/robertohincapie/Tecnicas-avanzadas-de-IA-Virtual/blob/main/Lab_Unidad4_Del_modelo_al_servicio.md).
+
 El repositorio avanza en **un solo lugar**, mediante commits sucesivos: no
 hay ramas paralelas ni entregas separadas. Cada etapa queda marcada con un
 **tag** de Git para poder ver exactamente el estado del proyecto en ese
